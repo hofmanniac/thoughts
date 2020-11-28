@@ -7,7 +7,7 @@
 /setup.py
 /thoughts.code-workspace
 /thoughts.egg-info
-/__init__.py
+/thoughts/__init__.py
 /__pycache__
 /commands/__pycache__
 /commands/__init__.py
