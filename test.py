@@ -3,6 +3,7 @@ from thoughts.rules_engine import RulesEngine
 
 # start a new inference engine with sample rules
 engine = RulesEngine()
+
 engine.load_rules("\\..\\rules\\rules.json")
 # engine.load_rules("\\..\\rules\\choose_your_own_adventure.json")
 

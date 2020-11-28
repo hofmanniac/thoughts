@@ -13,14 +13,14 @@ class RulesEngine:
     def __init__(self):
         self._load_plugins()
 
-    def _load_plugin(self, moniker, dotpath):
+    def load_plugin(self, moniker, dotpath):
         plugin_module = __import__(dotpath, fromlist=[''])
         self._plugins[moniker]  = plugin_module
 
     def _load_plugins(self):
-        self._load_plugin("#output", "thoughts.commands.output")
-        self._load_plugin("#prompt", "thoughts.commands.prompt") 
-        self._load_plugin("#read-rss", "thoughts.commands.read_rss")    
+        self.load_plugin("#output", "thoughts.commands.output")
+        self.load_plugin("#prompt", "thoughts.commands.prompt") 
+        self.load_plugin("#read-rss", "thoughts.commands.read_rss")    
 
     def _call_plugin(self, moniker, assertion):
         if moniker in self._plugins:
