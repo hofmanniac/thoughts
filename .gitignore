@@ -1,0 +1,10 @@
+/.ipynb_checkpoints
+/.venv
+/.vscode
+/build
+/dist
+/rules
+/setup.py
+/thoughts.code-workspace
+/thoughts.egg-info
+/__pycache__
