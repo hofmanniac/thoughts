@@ -1,7 +1,7 @@
-thoughts framework
+Thoughts Rules Engine
 ====================
 
-thoughts is a lightweight rules-based engine
+Thoughts is a lightweight rules-based engine.
 
 How To Use:
 ====================
@@ -65,7 +65,7 @@ Commands
 
 You can use commands in the "then" portion of your rules. The engine will run the commands if the "when" portion matches.
 
-In this version, only three commands are available
+In this version, only three commands are available:
 
 ## #output
 * Behavior: Will echo the text to the console (using print)
