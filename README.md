@@ -84,7 +84,7 @@ In this version, only three commands are available
 Examples
 =====================
 
-## read an rss feed and output it to the console at a readable rate
+## Read an rss feed and output it to the console at a readable rate
 [
     {"when": "rss digg.top",
      "then": [{"#read-rss": "$?feed", "into": "rss"},
