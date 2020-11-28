@@ -21,7 +21,11 @@ engine = RulesEngine()
 engine.load_rules("rules.json")
 
 # alternatively, you can create a manual rule without loading a file
+<<<<<<< HEAD
 rule = {"when": "what time is it", "then": {"#output": "time to get a new watch"}}
+=======
+rule = {"when": "what time is it", "then": "time to get a new watch"}
+>>>>>>> parent of 8ae7953... Update README.md
 engine.add_rule(rule)
 
 # define and run assertions
