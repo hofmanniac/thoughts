@@ -37,6 +37,10 @@ while True:
 
 # pip install twine
 # pip install wheel
+
+# update version in setup.py
+# update version in all __init__.py files (2 places)
+# update version number below
 # python setup.py sdist bdist_wheel
-# twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-# twine upload dist/*
+# twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.0.2*
+# twine upload dist/*0.0.2*
