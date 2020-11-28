@@ -8,6 +8,26 @@ class RulesEngine:
     context = Context()
     log = []
     _agenda = []
+    _plugins = {}
+
+    def __init__(self):
+        self._load_plugins()
+
+    def _load_plugin(self, moniker, dotpath):
+        plugin_module = __import__(dotpath, fromlist=[''])
+        self._plugins[moniker]  = plugin_module
+
+    def _load_plugins(self):
+        self._load_plugin("#output", "thoughts.commands.output")
+        self._load_plugin("#prompt", "thoughts.commands.prompt") 
+        self._load_plugin("#read-rss", "thoughts.commands.read_rss")    
+
+    def _call_plugin(self, moniker, assertion):
+        if moniker in self._plugins:
+            plugin = self._plugins[moniker]
+            plugin.process(assertion, self.context)
+            return True
+        return False
 
     def log_message(self, message):
         self.log.append(message)
@@ -27,10 +47,6 @@ class RulesEngine:
     # add a new rule manually
     def add_rule(self, rule):
         self.context.rules.append(rule)
-
-    # def unify(self, term1, term2):
-    #     if (term1 == term2):
-    #         return dict()
 
     def _apply_unification(self, term, unification):
         
@@ -109,39 +125,29 @@ class RulesEngine:
 
         return None
 
+    def _parse_command_name(self, assertion):
+        # grab the first
+            # hashkeys = [value for key,value in assertion.items() if key.startswith("#")]
+            # if len(haskeys) > 0: command = hashkeys[0]
+            # command = next(iter(assertion))
+            command = None
+            for key in assertion.keys(): 
+                if key.startswith("#"): 
+                    return key 
+
     def process_command(self, assertion):
         
         assertion = self._resolve_items(assertion)
 
         if (type(assertion) is dict):   
                   
-            command = None
-            for key in assertion.keys():
-                if key.startswith("#"):
-                    command = key
-                    break
+            command = self._parse_command_name(assertion)
 
-            # output
-            if command == "#output":
-                import thoughts.commands.output
-                thoughts.commands.output.process(assertion, self.context)
+            if command is not None:
+                result = self._call_plugin(command, assertion)
+                if result == True : return
 
-            # prompt
-            if command == "#prompt":
-                import thoughts.commands.prompt
-                thoughts.commands.prompt.process(assertion, self.context)
-
-            # read-rss
-            elif command == "#read-rss":
-                import thoughts.commands.read_rss
-                thoughts.commands.read_rss.process(assertion, self.context)
-
-            # assert (default)
-            else:
-                self.search_rules(assertion)
-
-        else: 
-            self.search_rules(assertion)
+        self.search_rules(assertion)
         
     # run the assertion - match and fire rules
     def run_assert(self, assertion):
@@ -162,9 +168,9 @@ class RulesEngine:
 
             # process it
             if (type(current_assertion) is list): 
-                for sub_assertion in current_assertion:
+                for sub_assertion in current_assertion:  
                     self.process_command(sub_assertion)
-            else:
+            else: 
                 self.process_command(current_assertion)
                     
 
