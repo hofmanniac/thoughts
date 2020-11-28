@@ -1,15 +1,16 @@
 from thoughts.rules_engine import RulesEngine
-# import importlib
 
 # start a new inference engine with sample rules
 engine = RulesEngine()
 
-engine.load_rules("\\..\\rules\\rules.json")
-# engine.load_rules("\\..\\rules\\choose_your_own_adventure.json")
+engine.load_rules("\\..\\samples\\hello_world.json")
+# engine.load_rules("\\..\\samples\\choose_your_own_adventure.json")
 
 while True:
 
-    assertion = input("enter assertion: ")
+    # enter an assertion below
+    # can use raw text (string) or can use json / dict format
+    assertion = input(": ")
 
     if (assertion == "log"):
         print("")

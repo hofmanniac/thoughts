@@ -1,0 +1,46 @@
+[ 
+    { "when":  {"game-event": "start"},
+     "then":  [{"#output": "You are standing in a scary woods at night."},
+               {"#output": "There are even scarier sounds coming from the north."},
+               {"#output": "To go north, turn to page 15."},
+               {"#output": "To stand there and whimper like a 3-year old, turn to page 10."}]
+    },
+  
+    { "when":  "10",
+      "then":  [{"#output": "You cry, and cry and cry and cry."},
+                {"game-event": "start"}]
+     },
+
+    { "when":  "15",
+      "then":  [{"#output": "North?? OK...."},
+               {"#output": "You go north (a terrible choice, btw) and run into goblins."},
+               {"#output": "To try talking with the goblins, turn to page 32."},
+               {"#output": "To try sneaking past the goblins, turn to page 50."}]
+    },
+  
+    { "when":  "32",
+      "then":  [{"#output": "You try talking with the goblins."},
+               {"#output": "Unfortunately, they do not speak your language and become murderous."},
+               {"#prompt": "Roll a die to see if you escape them."},
+               {"#output": "If you rolled a 2 or lower, then turn to page 60."},
+               {"#output": "If you rolled a 3 or higher then turn to page 65."}]
+    },
+
+    { "when":  "50",
+      "then":  [{"#output": "Your sneaky plan does not work."},
+                {"#output": "Unfortunately, they drag you back into their lair and keep you as a pet."},
+                {"#output": "GAME OVER"}]
+     },
+
+     { "when":  "60",
+       "then":  [{"#output": "You missed. That's extremely bad."},
+                {"#output": "Unfortunately, they knock yout out and take all of your money."},
+                {"#output": "GAME OVER"}]
+     },
+
+     { "when":  "65",
+       "then":  [{"#output": "Great job! You sneak past the goblins!"},
+                {"#output": "Then you went on to live happily ever after."},
+                {"#output": "GAME OVER"}]
+     }
+  ]

@@ -13,6 +13,8 @@ How To Use
         }
     ]  
 
+See the samples folder for examples on various rules and commands
+
 ## Import the engine
     from thoughts.rules_engine import RulesEngine
 
