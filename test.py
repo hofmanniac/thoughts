@@ -34,3 +34,9 @@ while True:
 
 # # run an assertion
 # engine.run_assert("what time is it")
+
+# pip install twine
+# pip install wheel
+# python setup.py sdist bdist_wheel
+# twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+# twine upload dist/*

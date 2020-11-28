@@ -18,10 +18,10 @@ from thoughts.rules_engine import RulesEngine
 
 # start a new engine and load the rule file above
 engine = RulesEngine()
-engine.load_rules("\\..\\rules\\rules.json")
+engine.load_rules("rules.json")
 
 # alternatively, you can create a manual rule without loading a file
-rule = {"when": "what time is it", "then": "time to get a new watch"}
+rule = {"when": "what time is it", "then": {"#output": "time to get a new watch"}}
 engine.add_rule(rule)
 
 # define and run assertions
