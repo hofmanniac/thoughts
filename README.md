@@ -6,10 +6,10 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
-# Sun Nov-29, 2020 Release
+## Sun Nov-29, 2020 Release
 In this release, you can now load and save .json files into Context Items. See #load-json and #save-json in the Commands section below for more information.
 
-# Sat Nov-28, 2020 Release
+## Sat Nov-28, 2020 Release
 In this release, you can now load custom plugins for use in the "then" portion of rules. See "load_plugin" in the Engine Methods section below for more information.
 
 How To Use
