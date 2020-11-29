@@ -21,6 +21,8 @@ class RulesEngine:
         self.load_plugin("#output", "thoughts.commands.output")
         self.load_plugin("#prompt", "thoughts.commands.prompt") 
         self.load_plugin("#read-rss", "thoughts.commands.read_rss")    
+        self.load_plugin("#load-json", "thoughts.commands.load_json")  
+        self.load_plugin("#save-json", "thoughts.commands.save_json") 
 
     def _call_plugin(self, moniker, assertion):
         if moniker in self._plugins:
@@ -173,4 +175,32 @@ class RulesEngine:
             else: 
                 self.process_command(current_assertion)
                     
+    def run_console(self):
+        
+        loop = True
 
+        while loop:
+
+            # enter an assertion below
+            # can use raw text (string) or can use json / dict format
+            assertion = input(": ")
+
+            if (assertion == "log"):
+                print("")
+                print("log:")
+                print("------------------------")
+                for item in self.log: print(item)
+                continue
+
+            elif (assertion == "items"):
+                print("")
+                print("context items:")
+                print("------------------------")
+                for item in self.context.items: 
+                    print(str(item))
+                continue
+            
+            # engine.run_assert("hello")
+            self.run_assert(assertion)
+
+            if (assertion == "exit"): loop = False

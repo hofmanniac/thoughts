@@ -3,32 +3,35 @@ from thoughts.rules_engine import RulesEngine
 # start a new inference engine with sample rules
 engine = RulesEngine()
 
+# engine.load_rules("\\..\\rules\\rules.json")
 engine.load_rules("\\..\\samples\\hello_world.json")
 # engine.load_rules("\\..\\samples\\choose_your_own_adventure.json")
 
-while True:
+engine.run_console()
 
-    # enter an assertion below
-    # can use raw text (string) or can use json / dict format
-    assertion = input(": ")
+# while True:
 
-    if (assertion == "log"):
-        print("")
-        print("log:")
-        print("------------------------")
-        for item in engine.log: print(item)
-        continue
+#     # enter an assertion below
+#     # can use raw text (string) or can use json / dict format
+#     assertion = input(": ")
 
-    elif (assertion == "items"):
-        print("")
-        print("context items:")
-        print("------------------------")
-        for item in engine.context.items: 
-            print(str(item))
-        continue
+#     if (assertion == "log"):
+#         print("")
+#         print("log:")
+#         print("------------------------")
+#         for item in engine.log: print(item)
+#         continue
 
-    # engine.run_assert("hello")
-    engine.run_assert(assertion)
+#     elif (assertion == "items"):
+#         print("")
+#         print("context items:")
+#         print("------------------------")
+#         for item in engine.context.items: 
+#             print(str(item))
+#         continue
+
+#     # engine.run_assert("hello")
+#     engine.run_assert(assertion)
 
 # # create a manual rule
 # rule = {"when": "what time is it", "then": "time to get a new watch"}
