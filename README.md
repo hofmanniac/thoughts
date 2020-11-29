@@ -3,6 +3,15 @@ Thoughts Rules Engine
 
 Thoughts is a lightweight rules engine.
 
+What's New
+===================
+
+# Sun Nov-29, 2020 Release
+In this release, you can now load and save .json files into Context Items. See #load-json and #save-json in the Commands section below for more information.
+
+# Sat Nov-28, 2020 Release
+In this release, you can now load custom plugins for use in the "then" portion of rules. See "load_plugin" in the Engine Methods section below for more information.
+
 How To Use
 ====================
 
@@ -13,7 +22,7 @@ How To Use
         }
     ]  
 
-See the samples folder for examples on various rules and commands
+See the samples folder in the GitHub project (https://github.com/hofmanniac/thoughts) for examples on various rules and commands.
 
 ## Import the engine
     from thoughts.rules_engine import RulesEngine
@@ -72,7 +81,17 @@ To do this, use load_plugin() and pass in a moniker and the "dot" path of the mo
 
 Then in your rules, you can use this as a command in the "then" rules.
 
-Whichever module you use will need to have a process function and that function will need to take two arguments - a dict and a thoughts.Context object.
+Engine Methods
+===================
+
+## add_rule(rule)
+Adds a rule into memory.
+
+## load_rules(file)
+Loads a .json rules file into memory.
+
+## load_plugin(moniker, module_namespace)
+Loads a plugin (Python module), which can be used in then "then "portion of rules. Whichever module you use will need to have a process function and that function will need to take two arguments - a dict and a thoughts.Context object.
 
 my_module.py
 
@@ -83,12 +102,28 @@ my_module.py
 
 Your custom module has access to the Context object, which contains all of the loaded rules and items from command that ran previously.
 
+## run_assert(assertion)
+Evaluates the assertion against the loaded rules. Essentially, the evaluation will attempt to match the assertion against the "when" portion of all loaded rules.
+
+If a rule matches, then the engine will add the "then" portion of the rule to the engine's evaluation agenda, substituting any unification variables that were determined during the "when" matching stage into the "then" items, and then evaluting them one at a time.
+
+As each command is evaluated for assertion, the system will also substitute any values from the Context Items that are indicated in the command item.
+
+## run_console()
+Runs a console input loop. Each item entered will be passed into the engine's run_assert(assertion) function for evaluation.
+
+Entering "log" will display the debug log.
+
+Entering "items" will display the Context Items.
+
+Entering "exit" will exit the console loop. Note that the "exit" command is also passed in as an assertion one last time, in case you want to handle the exit event first in any rules.
+
 Commands
 ===================
 
 You can use commands in the "then" portion of your rules. The engine will run the commands if the "when" portion matches.
 
-In this version, only three commands are available
+In this version, the following commands are available.
 
 ## #output
 * Behavior: Will echo the text to the console (using print)
@@ -103,6 +138,13 @@ In this version, only three commands are available
 * Behavior: Will read the specified rss feed into an item
 * Example: {"#read-rss": "https://rss-feed.rss", "into": "rss"}
 
+## #load-json
+* Behavior: Will read in a .json file into Context Items
+* Example: {"#load-json": "filename.json", "into": "item-name"}
+
+## #save-json
+* Will save a Context Item into a .json file
+* Example: {"#save-json": "filename.json", "from": "item-name"}
 
 Examples
 =====================
