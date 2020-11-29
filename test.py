@@ -47,5 +47,5 @@ engine.run_console()
 # update version in all __init__.py files (2 places)
 # update version number below
 # python setup.py sdist bdist_wheel
-# twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.0.3*
-# twine upload dist/*0.0.3*
+# twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.0.4*
+# twine upload dist/*0.0.4*
