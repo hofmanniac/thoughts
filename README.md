@@ -6,13 +6,13 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
-## Sun Dec-13, 2020 Release
+## Sat Dec-12, 2020 Release (0.0.5)
 You can now create sequence-based rules, which wait for multiple assertions in sequence before firing. See the How to Use section below for more details.
 
-## Sun Nov-29, 2020 Release
+## Sun Nov-29, 2020 Release (0.0.4)
 In this release, you can now load and save .json files into Context Items. See #load-json and #save-json in the Commands section below for more information.
 
-## Sat Nov-28, 2020 Release
+## Sat Nov-28, 2020 Release (0.0.3)
 In this release, you can now load custom plugins for use in the "then" portion of rules. See "load_plugin" in the Engine Methods section below for more information.
 
 How To Use
@@ -48,7 +48,8 @@ See the samples folder in the GitHub project (https://github.com/hofmanniac/thou
 * Dictionaries will match a dictionary, "when": {"name": "fido"} will match {"name": "fido"}
 
 ## If the assertion matches, the "then" portion will fire
-## Rules will "forward chain" - the "then" portion of rules will cause the engine to match against rules
+
+Rules will "forward chain" - the "then" portion of rules will cause the engine to match against rules
     [
         {   "when": "hello",
             "then": {"user-intent": "greet"}
@@ -68,8 +69,7 @@ See the samples folder in the GitHub project (https://github.com/hofmanniac/thou
 ## You can store "item" knowledge (facts)
     {"item": "user", "name": "jeremy", "dog": "fido"}
 
-## You can reference the items (facts) and their properties in your rules,
-## using $itemname.property syntax
+## You can reference the items (facts) and their properties in your rules, using $itemname.property syntax
     {"when": "what is my name",
     "then": [{"#output": "your name is $user.name"}
     }
