@@ -2,6 +2,7 @@ import json
 import os
 from thoughts.context import Context
 import thoughts.unification
+import copy
 
 class RulesEngine:
 
@@ -9,6 +10,7 @@ class RulesEngine:
     log = []
     _agenda = []
     _plugins = {}
+    _arcs = []
 
     def __init__(self):
         self._load_plugins()
@@ -86,21 +88,77 @@ class RulesEngine:
         self.log_message("adding " + str(then) + " to the agenda")
         self._agenda.append(then)
         
-    def search_rules(self, assertion):
+    def _attempt_complete(self, rule, assertion):
+
+        when = rule["when"]
+
+        if (type(when) is list):
+
+            # find the current constituent
+            if ("#seq-pos" not in rule): rule["#seq-pos"] = 0
+            pos = rule["#seq-pos"]
+            
+            candidate = when[pos]
+            
+            # attempt unification
+            unification = thoughts.unification.unify(candidate, assertion)          
+            if (unification is not None):
+                
+                # clone the rule
+                cloned_rule = copy.deepcopy(rule)
+                
+                # constituent matched, extend the arc
+                pos = pos + 1
+                cloned_rule["#seq-pos"] = pos
+
+                # merge unifications
+                if ("#unification" not in cloned_rule): 
+                    cloned_rule["#unification"] = unification
+                else:
+                    current_unification = cloned_rule["#unification"]
+                    cloned_rule["#unification"] = {**current_unification, **unification}
+
+                # check if arc completed
+                if (pos == len(when)):
+                    # arc completed
+                    return cloned_rule["#unification"]
+                else:
+                    # arc did not complete - add to active arcs
+                    self._arcs.append(cloned_rule)
+                    pass
+
+        else:
+            unification = thoughts.unification.unify(when, assertion)
+            return unification
+
+        return None
+
+    def _attempt_rule(self, rule, assertion):
+
+         # if the item is not a rule then skip it
+        if "when" not in rule: return None
+        
+        # try completing the rule         
+        unification = self._attempt_complete(rule, assertion)
+        
+        # if the unification succeeded
+        if (unification is not None):
+            self._process_then(rule["then"], unification)
+
+    def clear_arcs(self):
+        self._arcs = []
+
+    def _attempt_arcs(self, assertion):
+        
+        # run the agenda item against all arcs
+        for rule in self._arcs:           
+           self._attempt_rule(rule, assertion)
+
+    def _attempt_rules(self, assertion):
 
         # run the agenda item against all items in the context
         for rule in self.context.rules:
-            
-            # if the item is not a rule then skip it
-            if "when" not in rule: continue
-            
-            # try unifying the when part with the agenda item
-            when = rule["when"]
-            unification = thoughts.unification.unify(when, assertion)
-            
-            # if the unification succeeded
-            if (unification is not None):
-                self._process_then(rule["then"], unification)
+            self._attempt_rule(rule, assertion)
 
     def _resolve_items(self, term):
 
@@ -137,7 +195,7 @@ class RulesEngine:
                 if key.startswith("#"): 
                     return key 
 
-    def process_command(self, assertion):
+    def process_assertion(self, assertion):
         
         assertion = self._resolve_items(assertion)
 
@@ -149,11 +207,13 @@ class RulesEngine:
                 result = self._call_plugin(command, assertion)
                 if result == True : return
 
-        self.search_rules(assertion)
+        self._attempt_arcs(assertion)
+        self._attempt_rules(assertion)
         
     # run the assertion - match and fire rules
     def run_assert(self, assertion):
 
+        # parse json-style string assertion into dict
         if (type(assertion) is str):
             if (assertion.startswith("{")):
                 assertion = json.loads(assertion)
@@ -171,12 +231,19 @@ class RulesEngine:
             # process it
             if (type(current_assertion) is list): 
                 for sub_assertion in current_assertion:  
-                    self.process_command(sub_assertion)
+                    self.process_assertion(sub_assertion)
             else: 
-                self.process_command(current_assertion)
+                self.process_assertion(current_assertion)
                     
     def run_console(self):
-        
+        """ 
+        Runs a console input and output loop, asserting the input.
+        Use '#log' to output the engine log.
+        Use '#items' to output the items from the engine context.
+        Use '#clear-arcs' to clear the active rules (arcs).
+        Use '#exit' to exit the console loop.
+        """
+
         loop = True
 
         while loop:
@@ -185,14 +252,14 @@ class RulesEngine:
             # can use raw text (string) or can use json / dict format
             assertion = input(": ")
 
-            if (assertion == "log"):
+            if (assertion == "#log"):
                 print("")
                 print("log:")
                 print("------------------------")
                 for item in self.log: print(item)
                 continue
 
-            elif (assertion == "items"):
+            elif (assertion == "#items"):
                 print("")
                 print("context items:")
                 print("------------------------")
@@ -200,7 +267,9 @@ class RulesEngine:
                     print(str(item))
                 continue
             
-            # engine.run_assert("hello")
+            elif (assertion == "#clear-arcs"):
+                self.clear_arcs()
+
             self.run_assert(assertion)
 
-            if (assertion == "exit"): loop = False
+            if (assertion == "#exit"): loop = False

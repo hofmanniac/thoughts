@@ -6,6 +6,9 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Sun Dec-13, 2020 Release
+You can now create sequence-based rules, which wait for multiple assertions in sequence before firing. See the How to Use section below for more details.
+
 ## Sun Nov-29, 2020 Release
 In this release, you can now load and save .json files into Context Items. See #load-json and #save-json in the Commands section below for more information.
 
@@ -71,6 +74,19 @@ See the samples folder in the GitHub project (https://github.com/hofmanniac/thou
     "then": [{"#output": "your name is $user.name"}
     }
 
+## You can use sequence-based rules (chart parsing)
+
+This is useful for natural-language type parsing where a rule needs to wait on input before firing the consequent (then) portion. In the example below, when {"cat": "art", "lemma": "the"} is asserted, the rule will match the first constituent and add the rule as an arc to the active arcs. The new arc will "wait" for another consituent with {"cat": "n", "lemma": "..."} to be asserted before matching and firing the "then" portion. Be sure to place the constituents within an array / list [] within the "when" portion.
+
+    {   "when": [
+            {"cat" :"art", "lemma": "?det"},
+            {"cat" :"n", "lemma": "?entity"}],
+        "then": 
+            {"cat": "np", "entity": "?entity", "art": "?art"}
+    }
+
+Note - The active rules (arcs) will remain in memory until you clear them using engine.clear_arcs(). This is useful to assert one constituent at a time into the engine to inspect the results.
+
 ## You can add your own or pip installed modules as plugins!
 
 To do this, use load_plugin() and pass in a moniker and the "dot" path of the module. This module should already have been pip installed in the environment so that the runtime can load it, or could be a standalone module in your project.
@@ -86,6 +102,9 @@ Engine Methods
 
 ## add_rule(rule)
 Adds a rule into memory.
+
+## clear_arcs()
+Clears all active arcs (sequence rules in-progress) from memory.
 
 ## load_rules(file)
 Loads a .json rules file into memory.
@@ -112,11 +131,13 @@ As each command is evaluated for assertion, the system will also substitute any 
 ## run_console()
 Runs a console input loop. Each item entered will be passed into the engine's run_assert(assertion) function for evaluation.
 
-Entering "log" will display the debug log.
+Entering "#log" will display the debug log.
 
-Entering "items" will display the Context Items.
+Entering "#items" will display the Context Items.
 
-Entering "exit" will exit the console loop. Note that the "exit" command is also passed in as an assertion one last time, in case you want to handle the exit event first in any rules.
+Entering "#clear_arcs" will clear any active sequence-based rules (arcs) from memory.
+
+Entering "#exit" will exit the console loop. Note that the "#exit" command is also passed in as an assertion one last time, in case you want to handle the exit event first in any rules.
 
 Commands
 ===================
@@ -148,6 +169,8 @@ In this version, the following commands are available.
 
 Examples
 =====================
+
+See the samples folder in the GitHub project (https://github.com/hofmanniac/thoughts) for examples on various rules and commands.
 
 ## read an rss feed and output it to the console at a readable rate
     [

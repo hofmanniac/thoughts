@@ -1,0 +1,8 @@
+[
+    {   "when": [
+            {"cat" :"art", "lemma": "?art"},
+            {"cat" :"n", "lemma": "?entity"}],
+        "then": 
+            {"cat": "np", "entity": "?entity", "art": "?art"}
+    }
+]
