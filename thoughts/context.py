@@ -4,7 +4,7 @@ class Context:
 
     rules = []
     items = {}
-
+    
     def find_items(self, query, stopAfterFirst):
         
         results = []

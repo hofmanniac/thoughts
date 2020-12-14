@@ -6,6 +6,13 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Sun Dec-13, 2020 Release (0.0.6)
+You can now #tokenize a string and apply an assertion for every token in the string. You can also now use #lookup, to locate a matching fact in the context, which will then assert the matching fact. This is useful in parsing natural language, where you want to assert each word (token) in a sentence, lookup the corresponding lemma, and then match against a set of rules.
+
+See sequence_nlp.json in https://github.com/hofmanniac/thoughts/tree/master/samples for an example in action.
+
+Moved apply_unification from engine into thoughts.unification. Seemed the more natural spot!
+
 ## Sat Dec-12, 2020 Release (0.0.5)
 You can now create sequence-based rules, which wait for multiple assertions in sequence before firing. See the How to Use section below for more details.
 
@@ -147,25 +154,33 @@ You can use commands in the "then" portion of your rules. The engine will run th
 In this version, the following commands are available.
 
 ## #output
-* Behavior: Will echo the text to the console (using print)
-* Example: {"#output": "hello, world"}
+* Will echo the text to the console (using print)
 * Optional: specifiy a "rate" to slow output the contents to the console
+    {"#output": "hello, world"}
 
 ## #prompt
-* Behavior: Will ask for input and store into an item
-* Example: {"#input": "what is your name", "into": "username"}
+* Will ask for input and store into an item
+    {"#input": "what is your name", "into": "username"}
 
 ## #read-rss
-* Behavior: Will read the specified rss feed into an item
-* Example: {"#read-rss": "https://rss-feed.rss", "into": "rss"}
+* Will read the specified rss feed into an item
+    {"#read-rss": "https://rss-feed.rss", "into": "rss"}
 
 ## #load-json
-* Behavior: Will read in a .json file into Context Items
-* Example: {"#load-json": "filename.json", "into": "item-name"}
+* Will read in a .json file into Context Items
+    {"#load-json": "filename.json", "into": "item-name"}
+
+## #lookup
+* Will match (through unification) items in the context. If found, will assert the matching item.
+    {"#lookup": {"lemma": "dog"}}
 
 ## #save-json
 * Will save a Context Item into a .json file
-* Example: {"#save-json": "filename.json", "from": "item-name"}
+    {"#save-json": "filename.json", "from": "item-name"}
+
+## #tokenize
+* Will split a string into tokens (separated by spaces) and then assert each into the form specified in the "assert" argument
+    {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}
 
 Examples
 =====================

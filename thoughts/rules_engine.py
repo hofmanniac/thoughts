@@ -25,11 +25,17 @@ class RulesEngine:
         self.load_plugin("#read-rss", "thoughts.commands.read_rss")    
         self.load_plugin("#load-json", "thoughts.commands.load_json")  
         self.load_plugin("#save-json", "thoughts.commands.save_json") 
+        self.load_plugin("#tokenize", "thoughts.commands.tokenize") 
+        self.load_plugin("#lookup", "thoughts.commands.lookup")
 
     def _call_plugin(self, moniker, assertion):
+
         if moniker in self._plugins:
             plugin = self._plugins[moniker]
-            plugin.process(assertion, self.context)
+            new_items = plugin.process(assertion, self.context)
+            if new_items is not None: 
+                if (type(new_items) is list):
+                    if len(new_items) > 0: self._agenda.append(new_items)
             return True
         return False
 
@@ -52,36 +58,10 @@ class RulesEngine:
     def add_rule(self, rule):
         self.context.rules.append(rule)
 
-    def _apply_unification(self, term, unification):
-        
-        if (type(term) is dict):
-            result = {}
-            for key in term.keys():
-                newval = self._apply_unification(term[key], unification)
-                result[key] = newval
-            return result
-
-        elif (type(term) is list):
-            result = []
-            for item in term:
-                newitem = self._apply_unification(item, unification)
-                result.append(newitem)
-            return result
-
-        elif (type(term) is str):
-            # substitute unification into the then part
-            for key in unification.keys(): 
-                term = term.replace(key, unification[key])
-            # term = self.context.find_item(term)
-            return term
-
-        else:
-            return term
-
     # process the 'then' portion of the rule
     def _process_then(self, then, unification):
         
-        then = self._apply_unification(then, unification)
+        then = thoughts.unification.apply_unification(then, unification)
         
         # run the action, asserting if no specific action indicated
         # print("ASSERT: ", then)
@@ -183,20 +163,16 @@ class RulesEngine:
         else:
             return term
 
-        return None
-
     def _parse_command_name(self, assertion):
-        # grab the first
-            # hashkeys = [value for key,value in assertion.items() if key.startswith("#")]
-            # if len(haskeys) > 0: command = hashkeys[0]
-            # command = next(iter(assertion))
-            command = None
-            for key in assertion.keys(): 
-                if key.startswith("#"): 
-                    return key 
+
+        # grab the first where key starts with hashtag (pound)
+        for key in assertion.keys(): 
+            if key.startswith("#"): 
+                return key 
 
     def process_assertion(self, assertion):
         
+        # substitute $ items
         assertion = self._resolve_items(assertion)
 
         if (type(assertion) is dict):   
@@ -204,8 +180,12 @@ class RulesEngine:
             command = self._parse_command_name(assertion)
 
             if command is not None:
-                result = self._call_plugin(command, assertion)
-                if result == True : return
+                if (command == '#clear-arcs'): 
+                    self.clear_arcs()
+                    return
+                else:
+                    result = self._call_plugin(command, assertion)
+                    if result == True : return
 
         self._attempt_arcs(assertion)
         self._attempt_rules(assertion)
@@ -225,7 +205,7 @@ class RulesEngine:
         while(len(self._agenda) > 0):
 
             # grab the topmost agenda item
-            current_assertion = self._agenda.pop()
+            current_assertion = self._agenda.pop(0)
             self.log_message("asserting " + str(current_assertion))
 
             # process it

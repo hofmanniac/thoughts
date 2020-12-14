@@ -1,8 +1,24 @@
 [
+    {"lemma": "the", "cat": "art"},
+    {"lemma": "a", "cat": "art"},
+
+    {"lemma": "dog", "cat": "n"},
+    {"lemma": "person", "cat": "n"},
+
+    {
+        "when": {"input": "?text"},
+        "then": [{"#clear-arcs": ""},
+                 {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}]
+    },
+
     {   "when": [
             {"cat" :"art", "lemma": "?art"},
             {"cat" :"n", "lemma": "?entity"}],
         "then": 
             {"cat": "np", "entity": "?entity", "art": "?art"}
+    },
+
+    {   "when": {"cat": "np", "entity": "?entity", "art": "?art"},
+        "then": {"#output": "entity is ?entity, article is ?art"}
     }
 ]

@@ -185,11 +185,27 @@ def unify_strings(m1, m2):
         
     return result
 
-# loop = True
-# while(loop):
-#     s1 = input("string 1:")
-#     s2 = input("string 2:")
-#     x = unify_strings(s1, s2)
-#     print(x)
+def apply_unification(term, unification):
+        
+    if (type(term) is dict):
+        result = {}
+        for key in term.keys():
+            newval = apply_unification(term[key], unification)
+            result[key] = newval
+        return result
 
+    elif (type(term) is list):
+        result = []
+        for item in term:
+            newitem = apply_unification(item, unification)
+            result.append(newitem)
+        return result
 
+    elif (type(term) is str):
+        # substitute unification into the then part
+        for key in unification.keys(): 
+            term = term.replace(key, unification[key])
+        return term
+
+    else:
+        return term
