@@ -5,8 +5,7 @@
     {"lemma": "dog", "cat": "n"},
     {"lemma": "person", "cat": "n"},
 
-    {
-        "when": {"input": "?text"},
+    {   "when": {"input": "?text"},
         "then": [{"#clear-arcs": ""},
                  {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}]
     },

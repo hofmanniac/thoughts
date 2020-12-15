@@ -1,0 +1,32 @@
+[
+    {"source": "https://cs.nyu.edu/faculty/davise/papers/WinogradSchemas/WSCollection.xml"},
+    {"item": "3", "sample": "The trophy doesn't fit inside the suitcase because it is too large"},
+    {"item": "4", "sample": "The trophy doesn't fit inside the suitcase because it is too small"},
+
+    {"input": "The trophy doesn't fit inside the suitcase because it is too small"},
+
+    {"when": "winograd ?num",
+     "then": [{"#output": "PROCESSING - $?num.sample"}, {"input": "$?num.sample"}]
+    },
+  
+    { "when": {"input": "?effect because ?cause"},
+      "then": [{"parse": "?effect"}, {"parse": "?cause"}]
+    },
+
+    { "when": {"parse": "?x doesn't fit inside ?y"},
+      "then": [{"parse": "?x is too large"},
+              {"parse": "?y is too small"}]
+    },
+
+    { "when": {"parse": "?x is too ?quality"},
+      "then": [{"item": "?x", "is": {"quality": "?quality", "degree": "excessive"}}]
+    },
+
+    { "when": {"item": "?x", "is": {"quality": "?y", "degree": "excessive"}},
+      "then": {"#output": "?x is too ?y"}
+    }, 
+
+    { "when": {"input": "what was too ?quality"},
+      "then": {"#output": "?quality"}
+    }
+  ]

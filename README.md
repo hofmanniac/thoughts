@@ -6,6 +6,11 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Mon Dec-14, 2020 Release (0.0.7)
+Addded a sample for calculating Winograd Schema information with light natural language parsing. Also now the "then" portions of rules will push items to the top of the agenda, and in order. This will help favor new rules to finish their forward chaining behaviors sooner.
+
+See winograd_1.json in  https://github.com/hofmanniac/thoughts/tree/master/samples/academic/winograd for an example.
+
 ## Sun Dec-13, 2020 Release (0.0.6)
 You can now #tokenize a string and apply an assertion for every token in the string. You can also now use #lookup, to locate a matching fact in the context, which will then assert the matching fact. This is useful in parsing natural language, where you want to assert each word (token) in a sentence, lookup the corresponding lemma, and then match against a set of rules.
 

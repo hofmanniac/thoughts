@@ -60,13 +60,21 @@ class RulesEngine:
 
     # process the 'then' portion of the rule
     def _process_then(self, then, unification):
-        
+    
+        # apply unification variables (substitute variables from the "when" portion of the rule)
         then = thoughts.unification.apply_unification(then, unification)
         
-        # run the action, asserting if no specific action indicated
-        # print("ASSERT: ", then)
-        self.log_message("adding " + str(then) + " to the agenda")
-        self._agenda.append(then)
+        if (type(then) is list):
+            # list - insert items into the top of the agenda, but in order
+            i = 0
+            for item in then:
+                self.log_message("ADD:\t" + str(item) + " to the agenda")
+                self._agenda.insert(i, item)
+                i = i + 1
+        else:     
+            # else - insert into the top of the agenda
+            self.log_message("ADD:\t" + str(then) + " to the agenda")
+            self._agenda.insert(0, then)
         
     def _attempt_complete(self, rule, assertion):
 
@@ -81,7 +89,7 @@ class RulesEngine:
             candidate = when[pos]
             
             # attempt unification
-            unification = thoughts.unification.unify(candidate, assertion)          
+            unification = thoughts.unification.unify(assertion, candidate)          
             if (unification is not None):
                 
                 # clone the rule
@@ -108,7 +116,7 @@ class RulesEngine:
                     pass
 
         else:
-            unification = thoughts.unification.unify(when, assertion)
+            unification = thoughts.unification.unify(assertion, when)
             return unification
 
         return None
@@ -118,11 +126,14 @@ class RulesEngine:
          # if the item is not a rule then skip it
         if "when" not in rule: return None
         
-        # try completing the rule         
+        # try completing the rule
+        # self.log_message("")
+        # self.log_message("ATTEMPT" + str(assertion) + " against " + str(rule))       
         unification = self._attempt_complete(rule, assertion)
         
         # if the unification succeeded
         if (unification is not None):
+            # self.log_message("\t\tRule matched, firing")
             self._process_then(rule["then"], unification)
 
     def clear_arcs(self):
@@ -206,7 +217,8 @@ class RulesEngine:
 
             # grab the topmost agenda item
             current_assertion = self._agenda.pop(0)
-            self.log_message("asserting " + str(current_assertion))
+            self.log_message("ASSERT:\t" + str(current_assertion))
+            # print("asserting " + str(current_assertion))
 
             # process it
             if (type(current_assertion) is list): 
