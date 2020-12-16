@@ -165,9 +165,10 @@ class RulesEngine:
         else:
             unification = thoughts.unification.unify(assertion, when)
             if (unification is not None): 
-                self.log_message("MATCHED:\t" + str(rule))
+                cloned_rule = copy.deepcopy(rule)
+                self.log_message("MATCHED:\t" + str(cloned_rule))
                 # if the unification succeeded
-                self._process_then(rule, unification)
+                self._process_then(cloned_rule, unification)
 
     def clear_arcs(self):
         self._arcs = []
@@ -250,15 +251,16 @@ class RulesEngine:
 
             # grab the topmost agenda item
             current_assertion = self._agenda.pop(0)
-            self.log_message("")
-            self.log_message("ASSERT:\t\t" + str(current_assertion))
-            # print("asserting " + str(current_assertion))
 
             # process it
             if (type(current_assertion) is list): 
                 for sub_assertion in current_assertion:  
+                    self.log_message("")
+                    self.log_message("ASSERT:\t\t" + str(sub_assertion))
                     self.process_assertion(sub_assertion)
             else: 
+                self.log_message("")
+                self.log_message("ASSERT:\t\t" + str(current_assertion))
                 self.process_assertion(current_assertion)
                     
     def run_console(self):

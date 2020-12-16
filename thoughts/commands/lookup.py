@@ -1,4 +1,5 @@
 import thoughts.unification
+import copy
 
 def process(command, context):
 
@@ -15,13 +16,15 @@ def process(command, context):
         # if the item matches
         if (unification is not None):
 
+            new_item = copy.deepcopy(item)
+
             # add position information (inherited from lookup command)    
-            if (type(item) is dict): 
-                if ("#seq-start" in command): item["#seq-start"] = command["#seq-start"]
-                if ("#seq-end" in command): item["#seq-end"] = command["#seq-end"]
+            if (type(new_item) is dict): 
+                if ("#seq-start" in command): new_item["#seq-start"] = command["#seq-start"]
+                if ("#seq-end" in command): new_item["#seq-end"] = command["#seq-end"]
 
             # add found item to results
-            result.append(item)
+            result.append(new_item)
 
     # return all results
     return result

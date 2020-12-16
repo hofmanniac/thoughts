@@ -5,6 +5,9 @@ def unify(term1, term2):
 
     # https://www.javatpoint.com/ai-unification-in-first-order-logic 
 
+    # quick check - if equal then return
+    if (term1 == term2): return {}
+
     # Step. 1: If Ψ1 or Ψ2 is a variable or constant, then:
     if (type(term1) is str or type(term2) is str):
     
@@ -33,8 +36,7 @@ def unify(term1, term2):
             else:
                 # return Text.TextbookUnifyStrings(sTerm1, sTerm2)
                 return unify_strings(term1, sTerm2)
-        
-    
+         
     elif (type(term1) is dict and type(term2) is dict):
 
         joTerm1 = term1
@@ -53,17 +55,24 @@ def unify(term1, term2):
 
         # Step. 5: For i = 1 to the number of elements in Ψ1.
         for prop in joTerm2.keys():
-        
+    
+            # ignore #seq (positional) information, as it is injected by the engine at runtime
             if (prop == "#seq-start"): continue
             if (prop == "#seq-end"): continue
 
+            # can still use #seq-start and #seq-end in rules, just need to escape them with an extra #
+            prop1 = prop
+            if (prop == "##seq-start"): prop1 = "#seq-start"
+            if (prop == "##seq-end"): prop1 = "#seq-end"
+
             # a) Call Unify function with the ith element of Ψ1 and ith element of Ψ2, and put the result into S.
-            if prop not in joTerm1: return None
-            jtTest1 = joTerm1[prop]
+            if prop1 not in joTerm1: return None
+            jtTest1 = joTerm1[prop1]
 
             # b) If S = failure then returns Failure
             subSet2 = unify(jtTest1, joTerm2[prop])
             if (subSet2 is None): return None
+            
             # c) If S ≠ NIL then do,
             elif (len(subSet2.keys()) > 0): subSet = {**subSet, **subSet2}
         
