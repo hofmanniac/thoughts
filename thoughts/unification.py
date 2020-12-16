@@ -11,19 +11,28 @@ def unify(term1, term2):
         sTerm1 = str(term1)
 
         #  if term1 is a standalone variable
-        if (sTerm1.startswith("?")) and (" " in sTerm1 == False):
+        if (sTerm1.startswith("?")) and (" " not in sTerm1):
         
             #  then just unify it with term2
             unification = {}
-            unification.Add(sTerm1, term2)
+            unification[sTerm1] = term2
             return unification
         
         else:
         
             sTerm2 = str(term2)
 
-            # return Text.TextbookUnifyStrings(sTerm1, sTerm2)
-            return unify_strings(sTerm1, sTerm2)
+            #  if term2 is a standalone variable
+            if (sTerm2.startswith("?")) and (" " not in sTerm2):
+        
+                #  then just unify it with term1
+                unification = {}
+                unification[sTerm2] = term1
+                return unification
+            
+            else:
+                # return Text.TextbookUnifyStrings(sTerm1, sTerm2)
+                return unify_strings(term1, sTerm2)
         
     
     elif (type(term1) is dict and type(term2) is dict):
@@ -45,6 +54,9 @@ def unify(term1, term2):
         # Step. 5: For i = 1 to the number of elements in Ψ1.
         for prop in joTerm2.keys():
         
+            if (prop == "#seq-start"): continue
+            if (prop == "#seq-end"): continue
+
             # a) Call Unify function with the ith element of Ψ1 and ith element of Ψ2, and put the result into S.
             if prop not in joTerm1: return None
             jtTest1 = joTerm1[prop]
@@ -190,8 +202,19 @@ def apply_unification(term, unification):
     if (type(term) is dict):
         result = {}
         for key in term.keys():
-            newval = apply_unification(term[key], unification)
-            result[key] = newval
+            if (key == "#combine"):
+                items_to_combine = term["#combine"]
+                newval = {}
+                for item in items_to_combine:
+                    new_item = apply_unification(item, unification)
+                    newval = {**new_item, **newval}
+                # assume combine is a standalone operation
+                # could also merge this will other keys
+                # result[key] = newval
+                return newval
+            else:
+                newval = apply_unification(term[key], unification)
+                result[key] = newval
         return result
 
     elif (type(term) is list):
@@ -203,9 +226,16 @@ def apply_unification(term, unification):
 
     elif (type(term) is str):
         # substitute unification into the then part
-        for key in unification.keys(): 
-            term = term.replace(key, unification[key])
-        return term
+        if str(term).startswith("#\\"):
+            pass
+        elif (term.startswith("?")) and (" " not in term):
+            if term in unification:
+                return unification[term]
+        else:
+            for key in unification.keys():
+                new_val = str(unification[key])
+                term = term.replace(key, new_val)
+            return term
 
     else:
         return term

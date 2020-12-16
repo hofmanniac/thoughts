@@ -7,9 +7,10 @@ engine = RulesEngine()
 # engine.load_rules("\\..\\samples\\hello_world.json")
 # engine.load_rules("\\..\\samples\\choose_your_own_adventure.json")
 # engine.load_rules("\\..\\samples\\sequence_nlp.json")
-engine.load_rules("\\..\\samples\\academic\winograd\winograd_1.json")
-# engine.load_rules("\\..\\samples\\academic\winograd\winograd_1_text.json")
+# engine.load_rules("\\..\\samples\\academic\winograd\winograd_1.json")
 # engine.load_rules("\\..\\samples\\unification.json")
+engine.load_rules("\\..\\rules\\nlp_head_grammar.json")
+# engine.load_rules("\\..\\rules\\merge_unification.json")
 
 engine.run_console()
 
