@@ -6,7 +6,12 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
-## Wed Dec-15, 2002 Release (0.0.8)
+## Wed Dec-16, 2002 Release (0.1.0) - Beta!
+Excited to release some rule enhancements to allow for some more advanced natural language processing capabilities. Now you can use #combine in the "then" portion (consequent) of your rules to combine multiple unification variables into a single dict object.
+
+Check out the sample at https://github.com/hofmanniac/thoughts/tree/master/samples/nlp/nlp_head_grammar.json for an example of how to parse a simple "EFFECT because CAUSE" type statement using syntax and semantics in tandem.
+
+Also now that the engine is at a decent point in terms of capability, bumping the release number up a bit. Consider this as the first Beta version!
 
 ## Mon Dec-14, 2020 Release (0.0.7)
 Addded a sample for calculating Winograd Schema information with light natural language parsing. Also now the "then" portions of rules will push items to the top of the agenda, and in order. This will help favor new rules to finish their forward chaining behaviors sooner.
@@ -16,7 +21,7 @@ See winograd_1.json in  https://github.com/hofmanniac/thoughts/tree/master/sampl
 ## Sun Dec-13, 2020 Release (0.0.6)
 You can now #tokenize a string and apply an assertion for every token in the string. You can also now use #lookup, to locate a matching fact in the context, which will then assert the matching fact. This is useful in parsing natural language, where you want to assert each word (token) in a sentence, lookup the corresponding lemma, and then match against a set of rules.
 
-See sequence_nlp.json in https://github.com/hofmanniac/thoughts/tree/master/samples for an example in action.
+See sequence_nlp.json in https://github.com/hofmanniac/thoughts/tree/master/samples/nlp for an example in action.
 
 Moved apply_unification from engine into thoughts.unification. Seemed the more natural spot!
 
