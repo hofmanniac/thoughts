@@ -1,0 +1,44 @@
+[
+    {"#comment": "-- Sample input to use in console--------------"},
+    {"input": "the quick brown dog barked because the girl knocked"},
+
+    {"lemma": "the", "cat": "n-comp", "sem": {"det": "SPECIFIC"}},
+    {"lemma": "quick", "cat": "n-comp", "sem": {"speed": "QUICK-1"}},
+    {"lemma": "brown", "cat": "n-comp", "sem": {"color": "BROWN-1"}},
+    {"lemma": "dog", "cat": "n", "sem": {"entity": "DOG-1"}},
+    {"lemma": "girl", "cat": "n", "sem": {"entity": "GIRL-1"}},
+
+    {"lemma": "barked", "cat": "v", "sem": {"action": "BARK-1", "time": "past"}},
+    {"lemma": "knocked", "cat": "v", "sem": {"action": "KNOCK-1", "time": "past"}},
+
+    {"lemma": "because", "cat": "conj", "sem": "reason"},
+
+    {"when": {"input": "?text"},
+     "then": [{"#clear-arcs": ""},
+             {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}]
+    },
+
+    {"when": [{"cat": "n", "sem": "?semh"}],
+     "then": {"cat": "np", "sem": "?semh"}
+    },
+
+    {"when": [{"cat": "n-comp", "sem": "?sem-comp"}, {"cat": "np", "sem": "?semh"}],
+     "then": {"cat": "np", "sem":  {"#combine": ["?semh", "?sem-comp"]}}
+    },
+
+    {"when": [{"cat": "np", "sem": "?semnp"}, {"cat": "v", "sem": "?semh"}],
+     "then": {"cat": "clause", "sem": {"event": "?semh", "actor": "?semnp"}}
+    },
+
+    {"when": [{"cat": "clause", "sem": "?sem-effect"}, 
+              {"lemma": "because"}, 
+              {"cat": "clause", "sem": "?sem-cause"}],
+     "then": {"cause": "?sem-cause", "effect": "?sem-effect"}
+    },
+
+    {"when": [{"cause": "?sem-cause", "effect": "?sem-effect", "##seq-start": 0}],
+     "then": [{"#output": "CAUSE: ?sem-cause"}, 
+              {"#output": "EFFECT: ?sem-effect"}]
+    }
+
+]

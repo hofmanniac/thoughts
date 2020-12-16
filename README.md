@@ -6,6 +6,8 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Wed Dec-15, 2002 Release (0.0.8)
+
 ## Mon Dec-14, 2020 Release (0.0.7)
 Addded a sample for calculating Winograd Schema information with light natural language parsing. Also now the "then" portions of rules will push items to the top of the agenda, and in order. This will help favor new rules to finish their forward chaining behaviors sooner.
 
