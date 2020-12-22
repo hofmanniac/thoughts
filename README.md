@@ -6,7 +6,12 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
-## Wed Dec-16, 2002 Release (0.1.0) - Beta!
+## Tue Dec-22, 2020 Release (0.1.1)
+A new command has been added, #random.
+
+#random will take a list of commands and randomly choose from that set. For example, you could use this in a chatbot scenario to vary the responses from a set of possible responses.
+
+## Wed Dec-16, 2020 Release (0.1.0) - Beta!
 Excited to release some rule enhancements to allow for some more advanced natural language processing capabilities. Now you can use #combine in the "then" portion (consequent) of your rules to combine multiple unification variables into a single dict object.
 
 Check out the sample at https://github.com/hofmanniac/thoughts/tree/master/samples/nlp/nlp_head_grammar.json for an example of how to parse a simple "EFFECT because CAUSE" type statement using syntax and semantics in tandem.
@@ -14,7 +19,7 @@ Check out the sample at https://github.com/hofmanniac/thoughts/tree/master/sampl
 Also now that the engine is at a decent point in terms of capability, bumping the release number up a bit. Consider this as the first Beta version!
 
 ## Mon Dec-14, 2020 Release (0.0.7)
-Addded a sample for calculating Winograd Schema information with light natural language parsing. Also now the "then" portions of rules will push items to the top of the agenda, and in order. This will help favor new rules to finish their forward chaining behaviors sooner.
+Added a sample for calculating Winograd Schema information with light natural language parsing. Also now the "then" portions of rules will push items to the top of the agenda, and in order. This will help favor new rules to finish their forward chaining behaviors sooner.
 
 See winograd_1.json in  https://github.com/hofmanniac/thoughts/tree/master/samples/academic/winograd for an example.
 
@@ -173,6 +178,17 @@ In this version, the following commands are available.
 ## #prompt
 * Will ask for input and store into an item
     {"#input": "what is your name", "into": "username"}
+
+## #random
+* Will randomly assert from a set of possible options
+    {"when": "greet me",
+     "then": {"#random": [
+         {"#output": "Hi"},
+         {"#output": "Hello"},
+         {"#output": "What's up?"},
+         {"#output": "How are you?"}
+     ]}
+    }
 
 ## #read-rss
 * Will read the specified rss feed into an item

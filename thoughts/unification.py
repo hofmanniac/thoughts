@@ -82,6 +82,8 @@ def unify(term1, term2):
 
 def unify_strings(m1, m2):
     
+    if (type(m1) is not str or type(m2) is not str): return None
+    
     if (m1 == m2):
         return dict()
 

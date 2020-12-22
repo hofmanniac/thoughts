@@ -28,6 +28,7 @@ class RulesEngine:
         self.load_plugin("#save-json", "thoughts.commands.save_json") 
         self.load_plugin("#tokenize", "thoughts.commands.tokenize") 
         self.load_plugin("#lookup", "thoughts.commands.lookup")
+        self.load_plugin("#random", "thoughts.commands.random")
 
     def _call_plugin(self, moniker, assertion):
 
@@ -37,6 +38,8 @@ class RulesEngine:
             if new_items is not None: 
                 if (type(new_items) is list):
                     if len(new_items) > 0: self._agenda.append(new_items)
+                elif (new_items is not None):
+                    self._agenda.append(new_items)
             return True
         return False
 

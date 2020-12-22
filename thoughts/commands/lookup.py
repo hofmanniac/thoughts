@@ -26,5 +26,14 @@ def process(command, context):
             # add found item to results
             result.append(new_item)
 
+    # if not result, then echo back the value as-is
+    if (len(result) == 0):
+        new_item = copy.deepcopy(target)
+        # add position information (inherited from lookup command)    
+        if (type(new_item) is dict): 
+            if ("#seq-start" in command): new_item["#seq-start"] = command["#seq-start"]
+            if ("#seq-end" in command): new_item["#seq-end"] = command["#seq-end"]
+        result.append(new_item)
+
     # return all results
     return result

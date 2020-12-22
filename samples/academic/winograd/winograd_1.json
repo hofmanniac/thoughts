@@ -27,6 +27,6 @@
     }, 
 
     { "when": {"input": "what was too ?quality"},
-      "then": {"#output": "?quality"}
+      "then": [{"#lookup": {"is": {"quality": "?quality", "degree": "excessive"}}}]
     }
   ]
