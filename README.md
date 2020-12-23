@@ -6,6 +6,17 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Tue Dec-22, 2020 Release (0.1.2)
+Lots of improvements in this latest release - mostly geared towards supporting chatbots but can also be used for other types of applications and logic.
+
+Added #append and #into in-line commands. If these are present in your command, then the engine will store the result of the command (if present) into the variable specified. If #into is used, the variable will be set. If #append is used, the variable will be appended to the existing variable, or set if there is no existing variable already.
+
+Added #store command to store a value into a context item.
+
+Added #replace to substitute word tokens (separated by spaces) in the specified value, with the keys specified in the "with" argument. This is useful in scenarios where you want to substitute words like "you" with "me" or other straightforward (key matching) substitutions.
+
+Items should now use the #item tag instead of "item" (without the hashtag). This is to keep the engine-aware tags using the hashtag designation to avoid collisions and to provide some optimizations.
+
 ## Tue Dec-22, 2020 Release (0.1.1)
 A new command has been added, #random.
 
@@ -171,16 +182,20 @@ You can use commands in the "then" portion of your rules. The engine will run th
 In this version, the following commands are available.
 
 ## #output
-* Will echo the text to the console (using print)
-* Optional: specifiy a "rate" to slow output the contents to the console
+Will echo the text to the console (using print)
+
+Optional: specifiy a "rate" to slow output the contents to the console
+    
     {"#output": "hello, world"}
 
 ## #prompt
-* Will ask for input and store into an item
+Will ask for input and store into an item
+    
     {"#input": "what is your name", "into": "username"}
 
 ## #random
-* Will randomly assert from a set of possible options
+Will randomly assert from a set of possible options
+    
     {"when": "greet me",
      "then": {"#random": [
          {"#output": "Hi"},
@@ -191,23 +206,51 @@ In this version, the following commands are available.
     }
 
 ## #read-rss
-* Will read the specified rss feed into an item
+Will read the specified rss feed into an item
+    
     {"#read-rss": "https://rss-feed.rss", "into": "rss"}
 
 ## #load-json
-* Will read in a .json file into Context Items
+Will read in a .json file into Context Items
+    
     {"#load-json": "filename.json", "into": "item-name"}
 
 ## #lookup
-* Will match (through unification) items in the context. If found, will assert the matching item.
+Will match (through unification) items in the context. If found, will assert the matching item.
+    
     {"#lookup": {"lemma": "dog"}}
 
+## #replace
+Will substitute word tokens (separated by spaces) in the specified value, with the keys specified in the "with" argument. This is useful in scenarios where you want to substitute words like "you" with "me" or other straightforward (key matching) substitutions.
+
+    [
+        {   "when": "test replace",
+            "then": [{"#replace": "you like me", "with": "$pronouns", "#into": "?output"},
+                    {"#output": "?output"} ]
+        },
+
+        {"#item": "pronouns", "me": "you", "you": "me", "i": "you"}
+    ]
+
+    Console Result: i like you
+
 ## #save-json
-* Will save a Context Item into a .json file
+Will save a Context Item into a .json file
+    
     {"#save-json": "filename.json", "from": "item-name"}
 
+## #store
+Stores a value into a context item. Use #into to start a new variable or to overwrite any existing values. Use #append to append to an existing value (or to start a new variable).
+
+    [
+        {   "when": "my name is "?name",
+            "then": [{"#store": "?name", ", "#into": "?username"}]
+        }
+    ]
+
 ## #tokenize
-* Will split a string into tokens (separated by spaces) and then assert each into the form specified in the "assert" argument
+Will split a string into tokens (separated by spaces) and then assert each into the form specified in the "assert" argument
+    
     {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}
 
 Examples

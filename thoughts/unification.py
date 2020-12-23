@@ -242,6 +242,8 @@ def apply_unification(term, unification):
         elif (term.startswith("?")) and (" " not in term):
             if term in unification:
                 return unification[term]
+            else:
+                return term
         else:
             for key in unification.keys():
                 new_val = str(unification[key])

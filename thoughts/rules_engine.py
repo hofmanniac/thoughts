@@ -29,18 +29,30 @@ class RulesEngine:
         self.load_plugin("#tokenize", "thoughts.commands.tokenize") 
         self.load_plugin("#lookup", "thoughts.commands.lookup")
         self.load_plugin("#random", "thoughts.commands.random")
+        self.load_plugin("#store", "thoughts.commands.store")
+        self.load_plugin("#replace", "thoughts.commands.replace")
 
     def _call_plugin(self, moniker, assertion):
 
         if moniker in self._plugins:
+            
             plugin = self._plugins[moniker]
             new_items = plugin.process(assertion, self.context)
-            if new_items is not None: 
-                if (type(new_items) is list):
-                    if len(new_items) > 0: self._agenda.append(new_items)
-                elif (new_items is not None):
-                    self._agenda.append(new_items)
+
+            if new_items is not None:
+
+                # attempt storage
+                stored = self.context.store_item(assertion, new_items)
+                
+                # if not stored, then add to agenda
+                if stored == False: 
+                    if (type(new_items) is list):
+                        if len(new_items) > 0: self._agenda.append(new_items)
+                    elif (new_items is not None):
+                        self._agenda.append(new_items)
+
             return True
+
         return False
 
     def log_message(self, message):
@@ -193,7 +205,10 @@ class RulesEngine:
         if (type(term) is dict):
             result = {}
             for key in term.keys():
-                newval = self._resolve_items(term[key])
+                if (key == "#into" or key == "#append"): 
+                    newval = term[key]
+                else:
+                    newval = self._resolve_items(term[key])
                 result[key] = newval
             return result
 

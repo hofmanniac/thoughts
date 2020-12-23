@@ -5,12 +5,39 @@ class Context:
     rules = []
     items = {}
     
+    def store_item(self, assertion, item):
+
+        if ("#into" in assertion):
+            key = assertion["#into"]
+            self.items[key] = item
+            return True
+
+        elif ("#append" in assertion):
+            key = assertion["#append"]
+            current_item = self.get_item(key)
+
+            if (current_item is None):
+                self.items[key] = item
+            elif (type(current_item) is str):
+                item = current_item + str(item)
+                self.items[key] = item
+
+            return True
+
+        return False
+
+    def get_item(self, key):
+        if str.startswith(key, "?"):
+            if key in self.items:
+                return self.items[key]
+        return None
+
     def find_items(self, query, stopAfterFirst):
         
         results = []
 
         if "item" in query:
-            itemname = query["item"]
+            itemname = query["#item"]
             if itemname in self.items:
                 search = self.items[itemname]
                 if (search is not None):
@@ -19,7 +46,7 @@ class Context:
 
         for source in self.rules:
         
-            if "item" not in source: continue
+            if "#item" not in source: continue
 
             if (source is None): continue
 
@@ -43,7 +70,7 @@ class Context:
     def find_items_by_name(self, item):
 
         query = {}
-        query["item"] = item
+        query["#item"] = item
         return self.find_items(query, False)
 
     def _find_in_item(self, part, currentItem):
@@ -93,6 +120,10 @@ class Context:
         return result
 
     def find_item(self, text):
+
+        if str.startswith(text, "?"):
+            if text in self.items:
+                return self.items[text]
 
         if "$" not in text:
             return text
