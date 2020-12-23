@@ -230,6 +230,9 @@ class RulesEngine:
 
         # grab the first where key starts with hashtag (pound)
         for key in assertion.keys(): 
+            if key == "#append": continue
+            if key == "#into": continue
+            if key == "#unification": continue
             if key.startswith("#"): 
                 return key 
 
