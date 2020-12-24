@@ -6,6 +6,9 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Thu Dec-24, 2020 Release (0.1.4)
+Minor update - Fixed #replace to process replacments token by token (separated by spaces).
+
 ## Tue Dec-22, 2020 Release (0.1.2)
 Lots of improvements in this latest release - mostly geared towards supporting chatbots but can also be used for other types of applications and logic.
 
