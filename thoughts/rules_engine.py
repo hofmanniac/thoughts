@@ -249,6 +249,8 @@ class RulesEngine:
                 if (command == '#clear-arcs'): 
                     self.clear_arcs()
                     return
+                elif command == "#assert":
+                    assertion = assertion["#assert"]
                 else:
                     result = self._call_plugin(command, assertion)
                     if result == True : return
