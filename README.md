@@ -6,6 +6,9 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Thu Dec-24, 2020 Release (0.1.5)
+Minor update - Added #assert command, to more directly indicate when an assertion shoudl be performed.
+
 ## Thu Dec-24, 2020 Release (0.1.4)
 Minor update - Fixed #replace to process replacments token by token (separated by spaces).
 
@@ -183,6 +186,11 @@ Commands
 You can use commands in the "then" portion of your rules. The engine will run the commands if the "when" portion matches.
 
 In this version, the following commands are available.
+
+## assert
+Will assert a value to the engine.
+
+    {"#assert": "Hello, World"}
 
 ## #output
 Will echo the text to the console (using print)
