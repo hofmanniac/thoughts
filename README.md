@@ -6,6 +6,15 @@ Thoughts is a lightweight rules engine.
 What's New
 ===================
 
+## Release (0.1.6)
+You can now load multiple rule sets into the Context. Each rules set can have a name. If you don't provide a name, the system will generate a unique identifier (GUID) upon import.
+
+You can also now load rules from a list. For this reason, load_rules has been renamed to load_rules_from_file.
+
+New rules that you add through add_rule are added to a rule set called "default". Future release may allow you to change where new rules are added.
+
+Finally, the Console will trap errors and report a simple "Error". Future releases may improve this with more information.
+
 ## Thu Dec-24, 2020 Release (0.1.5)
 Minor update - Added #assert command, to more directly indicate when an assertion shoudl be performed.
 
@@ -188,7 +197,7 @@ Commands
 
 You can use commands in the "then" portion of your rules. The engine will run the commands if the "when" portion matches.
 
-In this version, the following commands are available.
+In this version, the following commands are available. See [here](./documentation/examples.md) for some examples.
 
 ## assert
 Will assert a value to the engine.
@@ -267,17 +276,3 @@ Will split a string into tokens (separated by spaces) and then assert each into 
     
     {"#tokenize": "?text", "assert": {"#lookup": {"lemma": "#"}}}
 
-Examples
-=====================
-
-See the samples folder in the GitHub project (https://github.com/hofmanniac/thoughts) for examples on various rules and commands.
-
-## read an rss feed and output it to the console at a readable rate
-    [
-        {"when": "rss digg.top",
-        "then": [{"#read-rss": "$?feed", "into": "rss"},
-                {"#output": "$rss.title", "rate": 0.0225}]
-        },
-
-        {"item": "digg", "top": "https://digg.com/rss/top.rss"}
-    ]
