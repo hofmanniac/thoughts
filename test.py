@@ -15,7 +15,7 @@ engine = RulesEngine()
 # engine.load_rules("\\..\\rules\\nlp_head_grammar.json")
 # engine.load_rules("\\..\\rules\\merge_unification.json")
 # engine.load_rules("\\..\\samples\\academic\\squad\\ipcc.json")
-engine.load_rules("\\..\\rules\\test.json", name="test")
+engine.load_rules_from_file("\\..\\rules\\test.json", name="test")
 
 engine.run_console()
 

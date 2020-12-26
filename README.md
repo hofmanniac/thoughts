@@ -73,7 +73,7 @@ See the samples folder in the GitHub project (https://github.com/hofmanniac/thou
 
 ## Start a new engine and load the rule file above
     engine = RulesEngine()
-    engine.load_rules("rules.json")
+    engine.load_rules_from_file("rules.json")
 
 ## Alternatively, you can create a manual rule without loading a file
     rule = {"when": "what time is it", "then": {"#output": "time to get a new watch"}}
@@ -142,13 +142,16 @@ Engine Methods
 ===================
 
 ## add_rule(rule)
-Adds a rule into memory.
+Adds a rule into memory. New rules are added to the default ruleset.
 
 ## clear_arcs()
 Clears all active arcs (sequence rules in-progress) from memory.
 
-## load_rules(file)
+## load_rules_from_file(file, name=None)
 Loads a .json rules file into memory.
+
+## load_rules_from_list(rules, name=None)
+Loads rules into memory directly from a list.
 
 ## load_plugin(moniker, module_namespace)
 Loads a plugin (Python module), which can be used in then "then "portion of rules. Whichever module you use will need to have a process function and that function will need to take two arguments - a dict and a thoughts.Context object.

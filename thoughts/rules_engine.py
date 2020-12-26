@@ -3,7 +3,6 @@ import os
 from thoughts.context import Context
 import thoughts.unification
 import copy
-import uuid
 
 class RulesEngine:
 
@@ -63,7 +62,7 @@ class RulesEngine:
         self.log.append(message)
 
     # load rules from a .json file
-    def _load_rules_from_file(self, file):
+    def load_rules_from_file(self, file, name = None):
         
         if (file.startswith("\\")):
             dir = os.path.dirname(__file__)
@@ -71,17 +70,12 @@ class RulesEngine:
 
         with open(file) as f:
             file_rules = list(json.load(f))
-            return file_rules
+            self.context.add_ruleset(file_rules, name, file)
 
-    def load_rules(self, file, name = None):
+    def load_rules_from_list(self, rules, name = None):
 
-        rules = self._load_rules_from_file(file)
-        self.log_message("LOAD:\t" + str(len(rules)) + " rules from " + file)
-
-        if name is None: name = str(uuid.uuid4())
-
-        ruleset = {"name": name, "rules": rules, "path": file}
-        self.context.rulesets.append(ruleset)
+        self.log_message("LOAD:\t" + str(len(rules)))
+        self.context.add_ruleset(rules, name, None)
 
     # add a new rule manually
     def add_rule(self, rule):
@@ -313,28 +307,34 @@ class RulesEngine:
 
         while loop:
 
-            # enter an assertion below
-            # can use raw text (string) or can use json / dict format
-            assertion = input(": ")
+            try:
+                # enter an assertion below
+                # can use raw text (string) or can use json / dict format
+                assertion = input(": ")
 
-            if (assertion == "#log"):
-                print("")
-                print("log:")
-                print("------------------------")
-                for item in self.log: print(item)
-                continue
+                if (assertion == "#log"):
+                    print("")
+                    print("log:")
+                    print("------------------------")
+                    for item in self.log: print(item)
+                    continue
 
-            elif (assertion == "#items"):
-                print("")
-                print("context items:")
-                print("------------------------")
-                for item in self.context.items: 
-                    print(str(item))
-                continue
+                elif (assertion == "#items"):
+                    print("")
+                    print("context items:")
+                    print("------------------------")
+                    for item in self.context.items: 
+                        print(str(item))
+                    continue
+                
+                elif (assertion == "#clear-arcs"):
+                    self.clear_arcs()
+
+                self.run_assert(assertion)
+
+                if (assertion == "#exit"): loop = False
             
-            elif (assertion == "#clear-arcs"):
-                self.clear_arcs()
+            except:
+                print("Error")
 
-            self.run_assert(assertion)
-
-            if (assertion == "#exit"): loop = False
+ 

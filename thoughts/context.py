@@ -1,4 +1,5 @@
 import thoughts.unification as unification
+import uuid
 
 class Context:
 
@@ -7,6 +8,13 @@ class Context:
     # rules = []
     items = {}
     
+    def add_ruleset(self, rules: list, name: str = None, path: str = None):
+        
+        if name is None: name = str(uuid.uuid4())
+
+        ruleset = {"name": name, "rules": rules, "path": path}
+        self.rulesets.append(ruleset)
+
     def store_item(self, assertion, item):
 
         if ("#into" in assertion):
