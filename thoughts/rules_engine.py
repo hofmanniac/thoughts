@@ -3,7 +3,7 @@ import os
 from thoughts.context import Context
 import thoughts.unification
 import copy
-# import uuid
+import uuid
 
 class RulesEngine:
 
@@ -15,6 +15,10 @@ class RulesEngine:
 
     def __init__(self):
         self._load_plugins()
+
+        # add the default ruleset
+        self.context.rulesets.append({"name": "default", "rules": []})
+        self.context.default_ruleset = self.context.rulesets[0]
 
     def load_plugin(self, moniker, dotpath):
         plugin_module = __import__(dotpath, fromlist=[''])
@@ -59,7 +63,7 @@ class RulesEngine:
         self.log.append(message)
 
     # load rules from a .json file
-    def load_rules(self, file):
+    def _load_rules_from_file(self, file):
         
         if (file.startswith("\\")):
             dir = os.path.dirname(__file__)
@@ -67,12 +71,21 @@ class RulesEngine:
 
         with open(file) as f:
             file_rules = list(json.load(f))
-            self.context.rules = file_rules
-            self.log_message("LOAD:\t" + str(len(file_rules)) + " rules from " + file)
+            return file_rules
+
+    def load_rules(self, file, name = None):
+
+        rules = self._load_rules_from_file(file)
+        self.log_message("LOAD:\t" + str(len(rules)) + " rules from " + file)
+
+        if name is None: name = str(uuid.uuid4())
+
+        ruleset = {"name": name, "rules": rules, "path": file}
+        self.context.rulesets.append(ruleset)
 
     # add a new rule manually
     def add_rule(self, rule):
-        self.context.rules.append(rule)
+        self.context.default_ruleset["rules"].append(rule)
 
     # process the 'then' portion of the rule
     def _process_then(self, rule, unification):
@@ -197,8 +210,9 @@ class RulesEngine:
     def _attempt_rules(self, assertion):
 
         # run the agenda item against all items in the context
-        for rule in self.context.rules:
-            self._attempt_rule(rule, assertion)
+        for ruleset in self.context.rulesets:
+            for rule in ruleset["rules"]:
+                self._attempt_rule(rule, assertion)
 
     def _resolve_items(self, term):
 

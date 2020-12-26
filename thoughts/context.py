@@ -2,7 +2,9 @@ import thoughts.unification as unification
 
 class Context:
 
-    rules = []
+    default_ruleset = None
+    rulesets = []
+    # rules = []
     items = {}
     
     def store_item(self, assertion, item):
@@ -44,26 +46,27 @@ class Context:
                     results.append(search)
                     if (stopAfterFirst): return results
 
-        for source in self.rules:
-        
-            if "#item" not in source: continue
+        for ruleset in self.rulesets:
+            for source in ruleset["rules"]:
+            
+                if "#item" not in source: continue
 
-            if (source is None): continue
+                if (source is None): continue
 
-            # for candidateItem in source:
-        
-            candidateItem = source
-            joItem = candidateItem
-            # joItem = candidateItem
-            # if (type(candidateItem) is not str): joItem = candidateItem.deepcopy()
+                # for candidateItem in source:
+            
+                candidateItem = source
+                joItem = candidateItem
+                # joItem = candidateItem
+                # if (type(candidateItem) is not str): joItem = candidateItem.deepcopy()
 
-            u = unification.unify(joItem, query)
-            if (u is None): continue
+                u = unification.unify(joItem, query)
+                if (u is None): continue
 
-            joItem["#unification"] = u
-            results.append(joItem)
+                joItem["#unification"] = u
+                results.append(joItem)
 
-            if (stopAfterFirst): return results[0]
+                if (stopAfterFirst): return results[0]
             
         return results
 
@@ -121,23 +124,16 @@ class Context:
 
     def find_item(self, text):
 
-        if str.startswith(text, "?"):
-            if text in self.items:
-                return self.items[text]
-
         if "$" not in text:
-            return text
+            if "?" not in text:
+                return text
 
-        else:
+        tokens = text.split(' ')
+        result = ""
 
-            tokens = text.split(' ')
-            result = ""
+        for token in tokens:
 
-            for token in tokens:
-
-                if (token.startswith("$") == False): 
-                    result = result + " " + token
-                    continue
+            if (token.startswith("$")):
 
                 parts = token.split('.')
                 currentItem = None
@@ -150,4 +146,11 @@ class Context:
                 else:
                     return currentItem
 
-            return result.strip()
+            elif token.startswith("?"):
+                if token in self.items:
+                    result = result + " " + str(self.items[token])
+            else:
+                result = result + " " + token
+                continue    
+
+        return result.strip()
