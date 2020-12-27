@@ -197,7 +197,7 @@ Commands
 
 You can use commands in the "then" portion of your rules. The engine will run the commands if the "when" portion matches.
 
-In this version, the following commands are available. See [here](./documentation/examples.md) for some examples.
+In this version, the following commands are available. See [here](https://github.com/hofmanniac/thoughts/blob/master/documentation/examples.md) for some examples.
 
 ## assert
 Will assert a value to the engine.
