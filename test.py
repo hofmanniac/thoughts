@@ -3,6 +3,22 @@ from thoughts.rules_engine import RulesEngine
 # start a new inference engine with sample rules
 engine = RulesEngine()
 
+basedir = "C:\\Users\\jeremyho\\source\\repos\\thoughts.chatbot"
+source_folder = basedir + "\\aiml\\pandorabots\\target"
+# file = source_folder + "\\pattern.json"
+engine.load_rules_from_file(source_folder + "\\bot_properties.json", name="bot.properties")
+engine.load_rules_from_file(source_folder + "\\bot.json", name="bot")
+
+print("BOT: HI")
+
+loop = True
+while (loop):
+    console_input = input("YOU: ")
+    console_input = str.upper(console_input)
+    results = engine.process_assertion(console_input)
+    for result in results: print(result)
+    # engine.run_assert(console_input)
+
 # engine.add_rule('{"when": "test", "then": {"#output": "hello!"} }')
 # engine.run_assert("test")
 
@@ -15,9 +31,8 @@ engine = RulesEngine()
 # engine.load_rules("\\..\\rules\\nlp_head_grammar.json")
 # engine.load_rules("\\..\\rules\\merge_unification.json")
 # engine.load_rules("\\..\\samples\\academic\\squad\\ipcc.json")
-engine.load_rules_from_file("\\..\\rules\\test.json", name="test")
-
-engine.run_console()
+# engine.load_rules_from_file("\\..\\rules\\test.json", name="test")
+# engine.run_console()
 
 # # create a manual rule
 # rule = {"when": "what time is it", "then": "time to get a new watch"}

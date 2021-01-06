@@ -5,13 +5,10 @@ class Context:
 
     default_ruleset = None
     rulesets = []
-    # rules = []
     items = {}
     
     def add_ruleset(self, rules: list, name: str = None, path: str = None):
-        
         if name is None: name = str(uuid.uuid4())
-
         ruleset = {"name": name, "rules": rules, "path": path}
         self.rulesets.append(ruleset)
 
@@ -58,11 +55,9 @@ class Context:
             for source in ruleset["rules"]:
             
                 if "#item" not in source: continue
-
                 if (source is None): continue
 
                 # for candidateItem in source:
-            
                 candidateItem = source
                 joItem = candidateItem
                 # joItem = candidateItem
@@ -79,7 +74,6 @@ class Context:
         return results
 
     def find_items_by_name(self, item):
-
         query = {}
         query["#item"] = item
         return self.find_items(query, False)
@@ -152,7 +146,11 @@ class Context:
                 if (type(currentItem) is str):
                     result = result + " " + currentItem
                 else:
-                    return currentItem
+                    if len(result) > 0:
+                        result = result + str(currentItem)
+                        return result
+                    else:
+                        return currentItem
 
             elif token.startswith("?"):
                 if token in self.items:

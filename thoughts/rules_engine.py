@@ -6,11 +6,17 @@ import copy
 
 class RulesEngine:
 
+    #region Class Variables
+
     context = Context()
     log = []
     _agenda = []
     _plugins = {}
     _arcs = []
+
+    #endregion
+
+    #region Constructor
 
     def __init__(self):
         self._load_plugins()
@@ -18,6 +24,9 @@ class RulesEngine:
         # add the default ruleset
         self.context.rulesets.append({"name": "default", "rules": []})
         self.context.default_ruleset = self.context.rulesets[0]
+    #endregion
+
+    #region Plugins
 
     def load_plugin(self, moniker, dotpath):
         plugin_module = __import__(dotpath, fromlist=[''])
@@ -58,6 +67,8 @@ class RulesEngine:
 
         return False
 
+    #endregion
+
     def log_message(self, message):
         self.log.append(message)
 
@@ -84,6 +95,8 @@ class RulesEngine:
     # process the 'then' portion of the rule
     def _process_then(self, rule, unification):
     
+        result = []
+
         # get the "then" portion (consequent) for the rule
         then = rule["then"]
 
@@ -104,6 +117,10 @@ class RulesEngine:
         i = 0
         for item in new_items:
             
+            # resolve as many $items as possible
+            # (this will happen again during assertion)
+            item = self._resolve_items(item)
+
             if seq_start is not None: 
                 if (type(item) is dict): item["#seq-start"] = seq_start
 
@@ -111,13 +128,18 @@ class RulesEngine:
                 if (type(item) is dict): item["#seq-end"] = seq_end
 
             self.log_message("ADD:\t\t" + str(item) + " to the agenda")
-            self._agenda.insert(i, item)
+            # self._agenda.insert(i, item)
             i = i + 1
+            result.append(item)
+        
+        return result
         
     def _attempt_rule(self, rule, assertion):
 
         # if the item is not a rule then skip it
         if "when" not in rule: return
+
+        result = []
 
         # get the "when" portion of the rule
         when = rule["when"]
@@ -176,7 +198,8 @@ class RulesEngine:
                     # arc completed
                     unification = cloned_rule["#unification"]
                     self.log_message("ARC-COMPLETE:\t" + str(cloned_rule))
-                    self._process_then(cloned_rule, unification)
+                    sub_result = self._process_then(cloned_rule, unification)
+                    self._merge_into_list(result, sub_result)
                 else:
                     # arc did not complete - add to active arcs
                     # cloned_rule["#ruleid"] = str(uuid.uuid4())
@@ -185,28 +208,36 @@ class RulesEngine:
 
         # else "when" part is not a sequence
         else:
+            when = self._resolve_items(when)
             unification = thoughts.unification.unify(assertion, when)
             if (unification is not None): 
                 cloned_rule = copy.deepcopy(rule)
                 self.log_message("MATCHED:\t" + str(cloned_rule))
                 # if the unification succeeded
-                self._process_then(cloned_rule, unification)
+                sub_result = self._process_then(cloned_rule, unification)
+                self._merge_into_list(result, sub_result)
+
+        return result
 
     def clear_arcs(self):
         self._arcs = []
 
     def _attempt_arcs(self, assertion):
-        
         # run the agenda item against all arcs
+        result = []
         for rule in self._arcs:           
-           self._attempt_rule(rule, assertion)
+           sub_result = self._attempt_rule(rule, assertion)
+           result = self._merge_into_list(result, sub_result)
+        return result
 
     def _attempt_rules(self, assertion):
-
         # run the agenda item against all items in the context
+        result = []
         for ruleset in self.context.rulesets:
             for rule in ruleset["rules"]:
-                self._attempt_rule(rule, assertion)
+                sub_result = self._attempt_rule(rule, assertion)
+                result = self._merge_into_list(result, sub_result)
+        return result
 
     def _resolve_items(self, term):
 
@@ -246,26 +277,50 @@ class RulesEngine:
 
     def process_assertion(self, assertion):
         
-        # substitute $ items
-        assertion = self._resolve_items(assertion)
+        result = []
 
-        if (type(assertion) is dict):   
-                  
-            command = self._parse_command_name(assertion)
+        assertions = None
+        if type(assertion) is not list: assertions = [assertion]
+        else: assertions = assertion
 
-            if command is not None:
-                if (command == '#clear-arcs'): 
-                    self.clear_arcs()
-                    return
-                elif command == "#assert":
-                    assertion = assertion["#assert"]
-                else:
-                    result = self._call_plugin(command, assertion)
-                    if result == True : return
+        for assertion in assertions: 
 
-        self._attempt_arcs(assertion)
-        self._attempt_rules(assertion)
+            self.log_message("")
+            self.log_message("ASSERT:\t\t" + str(assertion))
+
+            # substitute $ items
+            assertion = self._resolve_items(assertion)
+
+            if (type(assertion) is dict):   
+                    
+                command = self._parse_command_name(assertion)
+
+                if command is not None:
+                    if (command == '#clear-arcs'): 
+                        self.clear_arcs()
+                        return None
+                    elif command == "#assert":
+                        assertion = assertion["#assert"]
+                    else:
+                        plugin_result = self._call_plugin(command, assertion)
+                        if plugin_result == True : return None
+
+            sub_result = self._attempt_arcs(assertion)
+            result = self._merge_into_list(result, sub_result)
+            sub_result = self._attempt_rules(assertion)
+            result = self._merge_into_list(result, sub_result)
         
+        return result
+        
+    def _merge_into_list(self, main_list: list, item):
+        if item is None: return main_list
+        if main_list is None: main_list = []     
+        if type(item) is list:
+            for sub_item in item: main_list.append(sub_item)
+        else:
+            main_list.append(item)
+        return main_list
+            
     # run the assertion - match and fire rules
     def run_assert(self, assertion):
 
@@ -277,23 +332,24 @@ class RulesEngine:
         # add assertion to the agenda
         self._agenda.append(assertion)
 
+        # process the agenda (until empty)
+        self.process_agenda()
+
+    def process_agenda(self):
+
         # while the agenda has items
         while(len(self._agenda) > 0):
 
             # grab the topmost agenda item
-            current_assertion = self._agenda.pop(0)
+            agenda_item = self._agenda.pop(0)
 
             # process it
-            if (type(current_assertion) is list): 
-                for sub_assertion in current_assertion:  
-                    self.log_message("")
-                    self.log_message("ASSERT:\t\t" + str(sub_assertion))
-                    self.process_assertion(sub_assertion)
-            else: 
-                self.log_message("")
-                self.log_message("ASSERT:\t\t" + str(current_assertion))
-                self.process_assertion(current_assertion)
-                    
+            sub_result = self.process_assertion(agenda_item)
+            
+            if sub_result is None: continue
+            for item in sub_result:
+                self._agenda.append(item)
+
     def run_console(self):
         """ 
         Runs a console input and output loop, asserting the input.

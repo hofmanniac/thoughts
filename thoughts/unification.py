@@ -5,6 +5,9 @@ def unify(term1, term2):
 
     # https://www.javatpoint.com/ai-unification-in-first-order-logic 
 
+    if type(term1) is str: term1 = str.lower(term1)
+    if type(term2) is str: term2 = str.lower(term2)
+    
     # quick check - if equal then return
     if (term1 == term2): return {}
 
