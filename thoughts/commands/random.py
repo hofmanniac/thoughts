@@ -1,4 +1,5 @@
 import random
+from thoughts import context as ctx
 
 def process(command, context):
     
@@ -7,4 +8,6 @@ def process(command, context):
     if (type(random_set) is list):
         max = len(random_set)
         r = random.randint(0, max-1)
+        item = random_set[r]
+        ctx.Context.store_item(context, command, item)
         return random_set[r]

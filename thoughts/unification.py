@@ -216,7 +216,9 @@ def apply_unification(term, unification):
     if (type(term) is dict):
         result = {}
         for key in term.keys():
-            if (key == "#combine"):
+            if key == "#into" or key == "#append":
+                result[key] = term[key]
+            elif (key == "#combine"):
                 items_to_combine = term["#combine"]
                 newval = {}
                 for item in items_to_combine:

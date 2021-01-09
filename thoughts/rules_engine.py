@@ -24,6 +24,7 @@ class RulesEngine:
         # add the default ruleset
         self.context.rulesets.append({"name": "default", "rules": []})
         self.context.default_ruleset = self.context.rulesets[0]
+        
     #endregion
 
     #region Plugins
@@ -43,8 +44,17 @@ class RulesEngine:
         self.load_plugin("#random", "thoughts.commands.random")
         self.load_plugin("#store", "thoughts.commands.store")
         self.load_plugin("#replace", "thoughts.commands.replace")
+        self.load_plugin("#switch", "thoughts.commands.switch")
+        self.load_plugin("#date", "thoughts.commands.date")
 
     def _call_plugin(self, moniker, assertion):
+
+        if moniker in self._plugins:       
+            plugin = self._plugins[moniker]
+            new_items = plugin.process(assertion, self.context)
+            return new_items
+
+    def _call_plugin1(self, moniker, assertion):
 
         if moniker in self._plugins:
             
@@ -119,7 +129,7 @@ class RulesEngine:
             
             # resolve as many $items as possible
             # (this will happen again during assertion)
-            item = self._resolve_items(item)
+            # revise - item = self._resolve_items(item)
 
             if seq_start is not None: 
                 if (type(item) is dict): item["#seq-start"] = seq_start
@@ -172,6 +182,8 @@ class RulesEngine:
             unification = thoughts.unification.unify(assertion, candidate)          
             if (unification is not None):
 
+                # for item_key in unification.keys(): self.context.items[item_key] = unification[item_key]
+
                 # the constituent matched, extend the arc
                 # self.log_message("MATCHED:\t" + str(assertion) + " AGAINST " + str(rule))
 
@@ -211,6 +223,9 @@ class RulesEngine:
             when = self._resolve_items(when)
             unification = thoughts.unification.unify(assertion, when)
             if (unification is not None): 
+
+                # for item_key in unification.keys(): self.context.items[item_key] = unification[item_key]
+
                 cloned_rule = copy.deepcopy(rule)
                 self.log_message("MATCHED:\t" + str(cloned_rule))
                 # if the unification succeeded
@@ -271,9 +286,12 @@ class RulesEngine:
         for key in assertion.keys(): 
             if key == "#append": continue
             if key == "#into": continue
+            # if key == "#replace": continue
             if key == "#unification": continue
-            if key.startswith("#"): 
-                return key 
+            if key.startswith("#"): return key 
+
+    def clear_context_items(self):
+        self.context.clear_items()
 
     def process_assertion(self, assertion):
         
@@ -289,6 +307,7 @@ class RulesEngine:
             self.log_message("ASSERT:\t\t" + str(assertion))
 
             # substitute $ items
+            assertion = thoughts.unification.apply_unification(assertion, self.context.items)
             assertion = self._resolve_items(assertion)
 
             if (type(assertion) is dict):   
@@ -302,8 +321,9 @@ class RulesEngine:
                     elif command == "#assert":
                         assertion = assertion["#assert"]
                     else:
-                        plugin_result = self._call_plugin(command, assertion)
-                        if plugin_result == True : return None
+                        sub_result = self._call_plugin(command, assertion)
+                        result = self._merge_into_list(result, sub_result)
+                        return result # do not run rules?
 
             sub_result = self._attempt_arcs(assertion)
             result = self._merge_into_list(result, sub_result)

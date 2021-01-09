@@ -7,6 +7,9 @@ class Context:
     rulesets = []
     items = {}
     
+    def clear_items(self):
+        self.items = {}
+
     def add_ruleset(self, rules: list, name: str = None, path: str = None):
         if name is None: name = str(uuid.uuid4())
         ruleset = {"name": name, "rules": rules, "path": path}
@@ -16,7 +19,15 @@ class Context:
 
         if ("#into" in assertion):
             key = assertion["#into"]
-            self.items[key] = item
+            if str.startswith(key, "$"):
+                key = key[1:]
+                if type(item) is str:
+                    item = {"#item": key, "#": item}
+                else:
+                    pass
+                self.default_ruleset["rules"].append(item)
+            else:
+                self.items[key] = item
             return True
 
         elif ("#append" in assertion):
@@ -83,7 +94,8 @@ class Context:
         if (part.startswith("$")):      
             token = part[1:]
             currentItem = self.find_items_by_name(token)
-        
+            if len(currentItem) == 0: currentItem = part
+            
         else:
         
             if (type(currentItem) is str):
@@ -127,8 +139,7 @@ class Context:
     def find_item(self, text):
 
         if "$" not in text:
-            if "?" not in text:
-                return text
+            if "?" not in text: return text
 
         tokens = text.split(' ')
         result = ""
@@ -141,6 +152,7 @@ class Context:
                 currentItem = None
 
                 for part in parts:
+                    if len(part) == 0: part = "#"
                     currentItem = self._find_in_item(part, currentItem)
 
                 if (type(currentItem) is str):
@@ -155,6 +167,8 @@ class Context:
             elif token.startswith("?"):
                 if token in self.items:
                     result = result + " " + str(self.items[token])
+                else:
+                    result = result + " " + token
             else:
                 result = result + " " + token
                 continue    

@@ -13,7 +13,7 @@ def process(command, context):
         item = thoughts.context.Context.find_item(context, text)
 
     if (type(item) is str):
-        print(text)
+        slow_output(item, rate)
 
     elif (type(item) is dict):
         print(str(item))
@@ -28,6 +28,10 @@ def process(command, context):
 
     else:
         print(str(item))
+
+    if "pause" in command: 
+        pause = command["pause"]
+        time.sleep(pause)
 
 def speed_read(text, rate):
     
