@@ -2,8 +2,8 @@ from thoughts.rules_engine import RulesEngine
 
 def main():
 
-    test()
-    # test_chatbot2()
+    # test()
+    test_chatbot()
 
 def test():
 
@@ -22,7 +22,7 @@ def test():
     engine.run_assert("test2 pass")
     engine.run_assert("test3 pass")
 
-def test_chatbot2():
+def test_chatbot():
 
     # start a new inference engine with sample rules
     engine = RulesEngine()
@@ -34,16 +34,19 @@ def test_chatbot2():
     engine.load_rules_from_file(source_folder + "\\bot.json", name="bot")
     engine.load_rules_from_file(source_folder + "\\condition.json", name="condition")
     engine.load_rules_from_file(source_folder + "\\date.json", name="date")
+    engine.load_rules_from_file(source_folder + "\\first_rest.json", name="first_rest")
+    engine.load_rules_from_file(source_folder + "\\formats.json", name="formats")
+    engine.load_rules_from_file(source_folder + "\\input.json", name="input")
+    engine.load_rules_from_file(source_folder + "\\map.json", name="map")
+    engine.load_rules_from_file(source_folder + "\\pattern.json", name="pattern")
     engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
     engine.load_rules_from_file(source_folder + "\\person.json", name="person")
     engine.load_rules_from_file(source_folder + "\\set_template.json", name="set_template")
+    engine.load_rules_from_file(source_folder + "\\srai.json", name="srai")
     engine.load_rules_from_file(source_folder + "\\star.json", name="star")
-    engine.load_rules_from_file(source_folder + "\\formats.json", name="formats")
-    engine.load_rules_from_file(source_folder + "\\first_rest.json", name="first_rest")
     engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
-    engine.load_rules_from_file(source_folder + "\\map.json", name="map")
-    engine.load_rules_from_file(source_folder + "\\input.json", name="input")
-
+    engine.load_rules_from_file(source_folder + "\\think.json", name="think")
+    
     print("BOT: HI")
 
     agenda = []
@@ -84,9 +87,13 @@ def test_chatbot2():
                 idx = idx + 1
 
         output_text = str.strip(output_text)
-        if len(output_text) > 0:
-            output_command = {"#output": "BOT: " + output_text, "rate": 0.05}
-            engine.process_assertion(output_command)
+        if len(output_text) == 0: continue
+
+        output_command = {"#output": "BOT: " + output_text, "rate": 0.05}
+        engine.process_assertion(output_command)
+
+        store_command = {"#store": output_command, "#push": "$response"}
+        engine.process_assertion(store_command)
 
 def test_engine():
     pass

@@ -194,5 +194,3 @@ class RulesEngine:
             
             except:
                 print("Error")
-
- 

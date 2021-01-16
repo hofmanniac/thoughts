@@ -196,6 +196,7 @@ class Context:
 
                     if part_idx is not None:
                         if type(current_item) is list:
+                            part_idx = int(part_idx)
                             current_item = current_item[part_idx]
 
                 if (type(current_item) is str):
