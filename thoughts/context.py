@@ -6,6 +6,20 @@ class Context:
     default_ruleset = None
     rulesets = []
     items = {}
+    arcs = []
+    log = []
+
+    def log_message(self, message):
+        self.log.append(message)
+
+    def merge_into_list(self, main_list: list, item):
+        if item is None: return main_list
+        if main_list is None: main_list = []     
+        if type(item) is list:
+            for sub_item in item: main_list.append(sub_item)
+        else:
+            main_list.append(item)
+        return main_list
 
     def add_ruleset(self, rules: list, name: str = None, path: str = None):
         if name is None: name = str(uuid.uuid4())
@@ -208,3 +222,43 @@ class Context:
                 continue    
 
         return result.strip()
+
+    def apply_values(self, term, provider):
+            
+        if (type(term) is dict):
+            result = {}
+            for key in term.keys():
+                if key == "#into" or key == "#append" or key == "#push":
+                    result[key] = term[key]
+                elif (key == "#combine"):
+                    items_to_combine = term["#combine"]
+                    newval = {}
+                    for item in items_to_combine:
+                        new_item = self.apply_values(item, provider)
+                        newval = {**new_item, **newval}
+                    # assume combine is a standalone operation
+                    # could also merge this will other keys
+                    # result[key] = newval
+                    return newval
+                else:
+                    newval = self.apply_values(term[key], provider)
+                    result[key] = newval
+            return result
+
+        elif (type(term) is list):
+            result = []
+            for item in term:
+                # moved from rule engine, refactor
+                newitem = self.apply_values(item, provider) 
+                result.append(newitem)
+            return result
+
+        elif (type(term) is str):
+            if type(provider) is dict:
+                term = unification.retrieve(term, provider)
+            else:
+                term = self.retrieve(term)
+            return term
+
+        else:
+            return term

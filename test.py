@@ -1,18 +1,26 @@
 from thoughts.rules_engine import RulesEngine
 
 def main():
-    # test()
-    test_chatbot2()
+
+    test()
+    # test_chatbot2()
 
 def test():
+
     engine = RulesEngine()
-    engine.load_rules_from_file("\\..\\rules\\context.json")
-    # engine.process_assertion("test1")
-    #engine.run_assert("test1")
-    #engine.run_assert("test2 happy")
-    # engine.run_assert("test3 dog")
-    # engine.run_assert("test7 dog")
-    engine.run_assert("test8 dog")
+
+    # engine.load_rules_from_file("\\..\\rules\\context.json")
+    # # engine.process_assertion("test1")
+    # #engine.run_assert("test1")
+    # #engine.run_assert("test2 happy")
+    # # engine.run_assert("test3 dog")
+    # # engine.run_assert("test7 dog")
+    # engine.run_assert("test8 dog")
+
+    engine.load_rules_from_file("\\..\\rules\\regression1.json")
+    engine.run_assert("test1")
+    engine.run_assert("test2 pass")
+    engine.run_assert("test3 pass")
 
 def test_chatbot2():
 
