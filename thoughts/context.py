@@ -6,55 +6,73 @@ class Context:
     default_ruleset = None
     rulesets = []
     items = {}
-    
-    def clear_items(self):
-        self.items = {}
 
     def add_ruleset(self, rules: list, name: str = None, path: str = None):
         if name is None: name = str(uuid.uuid4())
         ruleset = {"name": name, "rules": rules, "path": path}
         self.rulesets.append(ruleset)
 
+    def clear_items(self):
+        for key in self.items.keys():
+            if str.startswith(key, "$"): continue 
+            self.items.pop(key)
+        # self.items = {}
+
     def store_item(self, assertion, item):
 
         if ("#into" in assertion):
-            key = assertion["#into"]
-            if str.startswith(key, "$"):
-                key = key[1:]
-                if type(item) is str:
-                    item = {"#item": key, "#": item}
-                else:
-                    pass
-                self.default_ruleset["rules"].append(item)
-            else:
-                self.items[key] = item
+            var_name = assertion["#into"]
+            self.items[var_name] = item
+            # if str.startswith(var_name, "$"):
+            #     var_name = var_name[1:]
+            #     if type(item) is str:
+            #         item = {"#item": var_name, "#": item}
+            #     else:
+            #         pass
+            #     self.default_ruleset["rules"].append(item)
+            # else:
+            #     self.items[var_name] = item
             return True
 
         elif ("#append" in assertion):
-            key = assertion["#append"]
-            current_item = self.get_item(key)
+            var_name = assertion["#append"]
+            if var_name in self.items: 
+                current_val = self.items[var_name]
+                if (current_val is None):
+                    self.items[var_name] = item
+                else:
+                    if type(current_val) is list: 
+                        current_val.append(item)
+                    else:
+                        self.items[var_name] = [current_val, item]
+                return True
+            else:
+                self.items[var_name] = item
+                return True
 
-            if (current_item is None):
-                self.items[key] = item
-            elif (type(current_item) is str):
-                item = current_item + str(item)
-                self.items[key] = item
-
-            return True
+        elif ("#push" in assertion):
+            var_name = assertion["#push"]
+            if var_name in self.items: 
+                current_val = self.items[var_name]
+                if (current_val is None):
+                    self.items[var_name] = item
+                else:
+                    if type(current_val) is list: 
+                        current_val.insert(0, item)
+                    else:
+                        self.items[var_name] = [item, current_val]
+                return True
+            else:
+                self.items[var_name] = item
+                return True
 
         return False
 
-    def get_item(self, key):
-        if str.startswith(key, "?"):
-            if key in self.items:
-                return self.items[key]
-        return None
-
-    def find_items(self, query, stopAfterFirst):
+    def _find_items(self, query, stopAfterFirst):
         
         results = []
 
-        if "item" in query:
+        if "#item" in query:
             itemname = query["#item"]
             if itemname in self.items:
                 search = self.items[itemname]
@@ -63,43 +81,39 @@ class Context:
                     if (stopAfterFirst): return results
 
         for ruleset in self.rulesets:
+
             for source in ruleset["rules"]:
             
                 if "#item" not in source: continue
                 if (source is None): continue
 
-                # for candidateItem in source:
-                candidateItem = source
-                joItem = candidateItem
-                # joItem = candidateItem
-                # if (type(candidateItem) is not str): joItem = candidateItem.deepcopy()
-
-                u = unification.unify(joItem, query)
+                u = unification.unify(source, query)
                 if (u is None): continue
-
-                joItem["#unification"] = u
-                results.append(joItem)
+                
+                source["#unification"] = u
+                results.append(source)
 
                 if (stopAfterFirst): return results[0]
             
         return results
 
-    def find_items_by_name(self, item):
+    def _find_items_by_name(self, item):
         query = {}
         query["#item"] = item
-        return self.find_items(query, False)
+        return self._find_items(query, False)
 
     def _find_in_item(self, part, currentItem):
         
-        if (part.startswith("$")):      
-            token = part[1:]
-            currentItem = self.find_items_by_name(token)
+        if (part.startswith("$")):
+
+            # token = part[1:]
+            currentItem = self._find_items_by_name(part)
             if len(currentItem) == 0: currentItem = part
             
         else:
         
             if (type(currentItem) is str):
-                currentItem = self.find_items_by_name(str(currentItem))
+                currentItem = self._find_items_by_name(str(currentItem))
             
             if (type(currentItem) is dict):
             
@@ -136,10 +150,9 @@ class Context:
 
         return result
 
-    def find_item(self, text):
+    def retrieve(self, text):
 
-        if "$" not in text:
-            if "?" not in text: return text
+        if ("$" not in text) and ("?" not in text): return text
 
         tokens = text.split(' ')
         result = ""
@@ -149,27 +162,48 @@ class Context:
             if (token.startswith("$")):
 
                 parts = token.split('.')
-                currentItem = None
+                current_item = None
 
                 for part in parts:
-                    if len(part) == 0: part = "#"
-                    currentItem = self._find_in_item(part, currentItem)
 
-                if (type(currentItem) is str):
-                    result = result + " " + currentItem
+                    if len(part) == 0: 
+                        part = "#"
+
+                    part_idx = None
+                    idx_bracket_start = str.find(part, "[")
+                    if idx_bracket_start > -1:
+                        part_name = part[:idx_bracket_start]
+                        idx_bracket_end = str.find(part, "]")
+                        part_idx = part[idx_bracket_start + 1: idx_bracket_end]
+                    else:
+                        part_name = part
+
+                    current_item = self._find_in_item(part_name, current_item)
+
+                    if part_idx is not None:
+                        if type(current_item) is list:
+                            current_item = current_item[part_idx]
+
+                if (type(current_item) is str):
+                    result = result + " " + current_item
+
+                elif (type(current_item) is list):
+                    for item in current_item:
+                        result = result + " " + str(item)
                 else:
                     if len(result) > 0:
-                        result = result + str(currentItem)
+                        result = result + str(current_item)
                         return result
                     else:
-                        return currentItem
+                        return current_item
 
             elif token.startswith("?"):
-                if token in self.items:
-                    result = result + " " + str(self.items[token])
-                else:
-                    result = result + " " + token
+
+                if token in self.items: result = result + " " + str(self.items[token])
+                else: result = result + " " + token
+
             else:
+
                 result = result + " " + token
                 continue    
 

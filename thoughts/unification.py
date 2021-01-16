@@ -7,7 +7,7 @@ def unify(term1, term2):
 
     if type(term1) is str: term1 = str.lower(term1)
     if type(term2) is str: term2 = str.lower(term2)
-    
+
     # quick check - if equal then return
     if (term1 == term2): return {}
 
@@ -39,7 +39,7 @@ def unify(term1, term2):
             else:
                 # return Text.TextbookUnifyStrings(sTerm1, sTerm2)
                 return unify_strings(term1, sTerm2)
-         
+        
     elif (type(term1) is dict and type(term2) is dict):
 
         joTerm1 = term1
@@ -114,6 +114,9 @@ def unify_strings(m1, m2):
 
         w1 = a1[i1]
         w2 = a2[i2]
+
+        w1 = remove_class_designation(w1)
+        w2 = remove_class_designation(w2)
 
         if (w1 == w2):
             i1 = i1+1
@@ -190,7 +193,7 @@ def unify_strings(m1, m2):
             
             else:     
                 loop = False
-                 
+                
         # if at the end of m1 and we're sitting on a wildcard in m2, advance m2
         if (i1 == len(a1)):      
             if (i2 < len(a2)):         
@@ -211,49 +214,24 @@ def unify_strings(m1, m2):
         
     return result
 
-def apply_unification(term, unification):
-        
-    if (type(term) is dict):
-        result = {}
-        for key in term.keys():
-            if key == "#into" or key == "#append":
-                result[key] = term[key]
-            elif (key == "#combine"):
-                items_to_combine = term["#combine"]
-                newval = {}
-                for item in items_to_combine:
-                    new_item = apply_unification(item, unification)
-                    newval = {**new_item, **newval}
-                # assume combine is a standalone operation
-                # could also merge this will other keys
-                # result[key] = newval
-                return newval
-            else:
-                newval = apply_unification(term[key], unification)
-                result[key] = newval
-        return result
+def remove_class_designation(term):
+    # remove class qualifiers (for now)
+    if type(term) is str and str.startswith(term, "?") and ":" in term:
+        idx = str.find(term, ":")
+        term = term[0:idx]
+    return term
 
-    elif (type(term) is list):
-        result = []
-        for item in term:
-            newitem = apply_unification(item, unification)
-            result.append(newitem)
-        return result
-
-    elif (type(term) is str):
-        # substitute unification into the then part
-        if str(term).startswith("#\\"):
-            pass
-        elif (term.startswith("?")) and (" " not in term):
-            if term in unification:
-                return unification[term]
-            else:
-                return term
+def retrieve(term, unification):
+    # substitute unification into the then part
+    if str(term).startswith("#\\"):
+        pass
+    elif (term.startswith("?")) and (" " not in term):
+        if term in unification:
+            return unification[term]
         else:
-            for key in unification.keys():
-                new_val = str(unification[key])
-                term = term.replace(key, new_val)
             return term
-
     else:
+        for key in unification.keys():
+            new_val = str(unification[key])
+            term = term.replace(key, new_val)
         return term

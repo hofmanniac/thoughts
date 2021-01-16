@@ -46,6 +46,9 @@ class RulesEngine:
         self.load_plugin("#replace", "thoughts.commands.replace")
         self.load_plugin("#switch", "thoughts.commands.switch")
         self.load_plugin("#date", "thoughts.commands.date")
+        self.load_plugin("#format", "thoughts.commands.format")
+        self.load_plugin("#first", "thoughts.commands.first")
+        self.load_plugin("#rest", "thoughts.commands.rest")
 
     def _call_plugin(self, moniker, assertion):
 
@@ -53,29 +56,6 @@ class RulesEngine:
             plugin = self._plugins[moniker]
             new_items = plugin.process(assertion, self.context)
             return new_items
-
-    def _call_plugin1(self, moniker, assertion):
-
-        if moniker in self._plugins:
-            
-            plugin = self._plugins[moniker]
-            new_items = plugin.process(assertion, self.context)
-
-            if new_items is not None:
-
-                # attempt storage
-                stored = self.context.store_item(assertion, new_items)
-                
-                # if not stored, then add to agenda
-                if stored == False: 
-                    if (type(new_items) is list):
-                        if len(new_items) > 0: self._agenda.append(new_items)
-                    elif (new_items is not None):
-                        self._agenda.append(new_items)
-
-            return True
-
-        return False
 
     #endregion
 
@@ -106,54 +86,90 @@ class RulesEngine:
     def _process_then(self, rule, unification):
     
         result = []
-
-        # get the "then" portion (consequent) for the rule
-        then = rule["then"]
+        then = rule["then"] # get the "then" portion (consequent) for the rule
 
         # grab the rule's sequence positional information
         # will apply this to each item in the "then" portion to pass forward
         seq_start = None 
-        if ("#seq-start" in rule): seq_start = rule["#seq-start"]
         seq_end = None 
+        if ("#seq-start" in rule): seq_start = rule["#seq-start"]
         if ("#seq-end" in rule): seq_end = rule["#seq-end"]
 
-        # apply unification variables (substitute variables from the "when" portion of the rule)
-        then = thoughts.unification.apply_unification(then, unification)
-        
+        # apply unification variables 
+        # (substitute variables from the "when" portion of the rule)
+        # then = thoughts.unification.apply_unification(then, unification)
+        then = self._apply_values(then, unification)
+        # then = self.context.apply(then, unification)
+
         # add each item in the "then" portion to the agenda
         new_items = []
         if (type(then) is list): new_items = then
         else: new_items.append(then)
-        i = 0
+        # i = 0
         for item in new_items:
             
             # resolve as many $items as possible
             # (this will happen again during assertion)
             # revise - item = self._resolve_items(item)
+            # item = self._resolve_items(item)
+            
+            if (seq_start is not None) and (type(item) is dict): 
+                item["#seq-start"] = seq_start
 
-            if seq_start is not None: 
-                if (type(item) is dict): item["#seq-start"] = seq_start
-
-            if (seq_end is not None):
-                if (type(item) is dict): item["#seq-end"] = seq_end
+            if (seq_end is not None) and (type(item) is dict): 
+                item["#seq-end"] = seq_end
 
             self.log_message("ADD:\t\t" + str(item) + " to the agenda")
             # self._agenda.insert(i, item)
-            i = i + 1
+            # i = i + 1
             result.append(item)
         
         return result
+
+    def _apply_values(self, term, provider):
         
+        if (type(term) is dict):
+            result = {}
+            for key in term.keys():
+                if key == "#into" or key == "#append" or key == "#push":
+                    result[key] = term[key]
+                elif (key == "#combine"):
+                    items_to_combine = term["#combine"]
+                    newval = {}
+                    for item in items_to_combine:
+                        new_item = self._apply_values(item, provider)
+                        newval = {**new_item, **newval}
+                    # assume combine is a standalone operation
+                    # could also merge this will other keys
+                    # result[key] = newval
+                    return newval
+                else:
+                    newval = self._apply_values(term[key], provider)
+                    result[key] = newval
+            return result
+
+        elif (type(term) is list):
+            result = []
+            for item in term:
+                newitem = self._apply_values(item, provider)
+                result.append(newitem)
+            return result
+
+        elif (type(term) is str):
+            if type(provider) is dict:
+                term = thoughts.unification.retrieve(term, provider)
+            else:
+                term = self.context.retrieve(term)
+            return term
+
+        else:
+            return term
+
     def _attempt_rule(self, rule, assertion):
 
-        # if the item is not a rule then skip it
-        if "when" not in rule: return
-
-        result = []
-
-        # get the "when" portion of the rule
-        when = rule["when"]
-
+        if "when" not in rule: return # if the item is not a rule then skip it
+        result = [] 
+        when = rule["when"] # get the "when" portion of the rule
         # self.log_message("EVAL:\t" + str(assertion) + " AGAINST " + str(rule))
 
         # if the "when" portion is a list (sequence)
@@ -162,12 +178,12 @@ class RulesEngine:
             # arcs - test if arc position matches assertion's position
             # (ignore if no positional information)
             assertion_start = 0
-            if ("#seq-start" in assertion): assertion_start = assertion["#seq-start"]        
             assertion_end = 0
-            if ("#seq-end" in assertion): assertion_end = assertion["#seq-end"]
             rule_start = None
-            if ("#seq-start" in rule): rule_start = rule["#seq-start"]   
             rule_end = None
+            if ("#seq-start" in assertion): assertion_start = assertion["#seq-start"]        
+            if ("#seq-end" in assertion): assertion_end = assertion["#seq-end"]
+            if ("#seq-start" in rule): rule_start = rule["#seq-start"]   
             if ("#seq-end" in rule): rule_end = rule["#seq-end"]
 
             if (rule_end is not None): 
@@ -178,59 +194,59 @@ class RulesEngine:
             seq_idx = rule["#seq-idx"]      
             candidate = when[seq_idx]
             
-            # attempt unification
-            unification = thoughts.unification.unify(assertion, candidate)          
-            if (unification is not None):
+            # attempt unification (sequences)
+            unification = thoughts.unification.unify(assertion, candidate)
+            
+            if unification is None: return None
 
-                # for item_key in unification.keys(): self.context.items[item_key] = unification[item_key]
+            # next constituent in sequence unified
+            unification["?#when"] = copy.deepcopy(assertion)
 
-                # the constituent matched, extend the arc
-                # self.log_message("MATCHED:\t" + str(assertion) + " AGAINST " + str(rule))
+            # the constituent matched, extend the arc
+            # self.log_message("MATCHED:\t" + str(assertion) + " AGAINST " + str(rule))
 
-                # clone the rule
-                cloned_rule = copy.deepcopy(rule)
+            # clone the rule
+            cloned_rule = copy.deepcopy(rule)
 
-                # move to the next constituent in the arc                
-                seq_idx = seq_idx + 1
-                cloned_rule["#seq-idx"] = seq_idx
+            # move to the next constituent in the arc                
+            seq_idx = seq_idx + 1
+            cloned_rule["#seq-idx"] = seq_idx
 
-                # update the position information for the arc
-                if rule_start is None: cloned_rule["#seq-start"] = assertion_start
-                cloned_rule["#seq-end"] = assertion_end
+            # update the position information for the arc
+            if rule_start is None: cloned_rule["#seq-start"] = assertion_start
+            cloned_rule["#seq-end"] = assertion_end
 
-                # merge unifications (variables found)
-                if ("#unification" not in cloned_rule): 
-                    cloned_rule["#unification"] = unification
-                else:
-                    current_unification = cloned_rule["#unification"]
-                    cloned_rule["#unification"] = {**current_unification, **unification}
+            # merge unifications (variables found)
+            if ("#unification" not in cloned_rule): 
+                cloned_rule["#unification"] = unification
+            else:
+                current_unification = cloned_rule["#unification"]
+                cloned_rule["#unification"] = {**current_unification, **unification}
 
-                # check if arc completed
-                if (seq_idx == len(when)):
-                    # arc completed
-                    unification = cloned_rule["#unification"]
-                    self.log_message("ARC-COMPLETE:\t" + str(cloned_rule))
-                    sub_result = self._process_then(cloned_rule, unification)
-                    self._merge_into_list(result, sub_result)
-                else:
-                    # arc did not complete - add to active arcs
-                    # cloned_rule["#ruleid"] = str(uuid.uuid4())
-                    self.log_message("ARC-EXTEND:\t" + str(cloned_rule))
-                    self._arcs.append(cloned_rule)
-
-        # else "when" part is not a sequence
-        else:
-            when = self._resolve_items(when)
-            unification = thoughts.unification.unify(assertion, when)
-            if (unification is not None): 
-
-                # for item_key in unification.keys(): self.context.items[item_key] = unification[item_key]
-
-                cloned_rule = copy.deepcopy(rule)
-                self.log_message("MATCHED:\t" + str(cloned_rule))
-                # if the unification succeeded
+            # check if arc completed
+            if (seq_idx == len(when)): # arc completed           
+                unification = cloned_rule["#unification"]
+                self.log_message("ARC-COMPLETE:\t" + str(cloned_rule))
                 sub_result = self._process_then(cloned_rule, unification)
                 self._merge_into_list(result, sub_result)
+
+            else: # arc did not complete - add to active arcs          
+                self.log_message("ARC-EXTEND:\t" + str(cloned_rule))
+                self._arcs.append(cloned_rule)
+
+        # else "when" part is not a non-sequential structure
+        else:
+
+            # when = self._resolve_items(when)
+            unification = thoughts.unification.unify(assertion, when)
+
+            if unification is None: return None
+
+            unification["?#when"] = copy.deepcopy(assertion)
+            cloned_rule = copy.deepcopy(rule)
+            self.log_message("MATCHED:\t" + str(cloned_rule))
+            sub_result = self._process_then(cloned_rule, unification)
+            self._merge_into_list(result, sub_result)
 
         return result
 
@@ -254,38 +270,13 @@ class RulesEngine:
                 result = self._merge_into_list(result, sub_result)
         return result
 
-    def _resolve_items(self, term):
-
-        if (type(term) is dict):
-            result = {}
-            for key in term.keys():
-                if (key == "#into" or key == "#append"): 
-                    newval = term[key]
-                else:
-                    newval = self._resolve_items(term[key])
-                result[key] = newval
-            return result
-
-        elif (type(term) is list):
-            result = []
-            for item in term:
-                newitem = self._resolve_items(item)
-                result.append(newitem)
-            return result
-
-        elif (type(term) is str):
-            term = self.context.find_item(term)
-            return term
-
-        else:
-            return term
-
     def _parse_command_name(self, assertion):
 
         # grab the first where key starts with hashtag (pound)
         for key in assertion.keys(): 
             if key == "#append": continue
             if key == "#into": continue
+            if key == "#push": continue
             # if key == "#replace": continue
             if key == "#unification": continue
             if key.startswith("#"): return key 
@@ -307,8 +298,9 @@ class RulesEngine:
             self.log_message("ASSERT:\t\t" + str(assertion))
 
             # substitute $ items
-            assertion = thoughts.unification.apply_unification(assertion, self.context.items)
-            assertion = self._resolve_items(assertion)
+            # assertion = thoughts.unification.apply_unification(assertion, self.context.items)
+            # assertion = self._resolve_items(assertion)
+            assertion = self._apply_values(assertion, self.context)
 
             if (type(assertion) is dict):   
                     
