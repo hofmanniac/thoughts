@@ -26,11 +26,10 @@ class Context:
         ruleset = {"name": name, "rules": rules, "path": path}
         self.rulesets.append(ruleset)
 
-    def clear_items(self):
+    def clear_variables(self):
         for key in self.items.keys():
             if str.startswith(key, "$"): continue 
             self.items.pop(key)
-        # self.items = {}
 
     def store_item(self, assertion, item):
 
@@ -214,7 +213,13 @@ class Context:
 
             elif token.startswith("?"):
 
-                if token in self.items: result = result + " " + str(self.items[token])
+                if token in self.items:
+                    if type(self.items[token] is list):
+                        for item in self.items[token]:
+                            # refactor - this needs to be recursive
+                            result = result + " " + str(item) 
+                    else:
+                        result = result + " " + str(self.items[token])
                 else: result = result + " " + token
 
             else:

@@ -96,8 +96,8 @@ class RulesEngine:
             if key == "#unification": continue
             if key.startswith("#"): return key
 
-    def clear_context_items(self):
-        self.context.clear_items()
+    def clear_context_variables(self):
+        self.context.clear_variables()
 
     def process_assertion(self, assertion):
         

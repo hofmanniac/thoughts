@@ -6,11 +6,14 @@ def process(command, context: ctx.Context):
     
     result = []
 
-    if "#assert" in command: command = command["#assert"]
-
-    sub_result = attempt_arcs(command, context)
+    assertion = None
+    if "#assert" in command: assertion = command["#assert"]
+    else: assertion = command
+    if assertion is None: return None
+    
+    sub_result = attempt_arcs(assertion, context)
     result = context.merge_into_list(result, sub_result)
-    sub_result = attempt_rules(command, context)
+    sub_result = attempt_rules(assertion, context)
     result = context.merge_into_list(result, sub_result)
 
     # either store or return the result

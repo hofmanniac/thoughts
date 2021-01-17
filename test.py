@@ -30,23 +30,25 @@ def test_chatbot():
     basedir = "C:\\Users\\jeremyho\\source\\repos\\thoughts.chatbot"
     source_folder = basedir + "\\aiml\\pandorabots\\target"
 
-    engine.load_rules_from_file(source_folder + "\\bot_prop.json", name="bot_prop")
-    engine.load_rules_from_file(source_folder + "\\bot.json", name="bot")
-    engine.load_rules_from_file(source_folder + "\\condition.json", name="condition")
-    engine.load_rules_from_file(source_folder + "\\date.json", name="date")
-    engine.load_rules_from_file(source_folder + "\\first_rest.json", name="first_rest")
-    engine.load_rules_from_file(source_folder + "\\formats.json", name="formats")
-    engine.load_rules_from_file(source_folder + "\\input.json", name="input")
-    engine.load_rules_from_file(source_folder + "\\map.json", name="map")
-    engine.load_rules_from_file(source_folder + "\\pattern.json", name="pattern")
-    engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
-    engine.load_rules_from_file(source_folder + "\\person.json", name="person")
-    engine.load_rules_from_file(source_folder + "\\set_template.json", name="set_template")
-    engine.load_rules_from_file(source_folder + "\\srai.json", name="srai")
-    engine.load_rules_from_file(source_folder + "\\star.json", name="star")
-    engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
-    engine.load_rules_from_file(source_folder + "\\think.json", name="think")
+    # engine.load_rules_from_file(source_folder + "\\bot_prop.json", name="bot_prop")
+    # engine.load_rules_from_file(source_folder + "\\bot.json", name="bot")
+    # engine.load_rules_from_file(source_folder + "\\condition.json", name="condition")
+    # engine.load_rules_from_file(source_folder + "\\date.json", name="date")
+    # engine.load_rules_from_file(source_folder + "\\first_rest.json", name="first_rest")
+    # engine.load_rules_from_file(source_folder + "\\formats.json", name="formats")
+    # engine.load_rules_from_file(source_folder + "\\input.json", name="input")
+    # engine.load_rules_from_file(source_folder + "\\map.json", name="map")
+    # engine.load_rules_from_file(source_folder + "\\pattern.json", name="pattern")
+    # engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
+    # engine.load_rules_from_file(source_folder + "\\person.json", name="person")
+    # engine.load_rules_from_file(source_folder + "\\set_template.json", name="set_template")
+    # engine.load_rules_from_file(source_folder + "\\srai.json", name="srai")
+    # engine.load_rules_from_file(source_folder + "\\star.json", name="star")
+    # engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
+    # engine.load_rules_from_file(source_folder + "\\think.json", name="think")
     
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
+
     print("BOT: HI")
 
     agenda = []
@@ -64,7 +66,7 @@ def test_chatbot():
         
         input_command = {"#input": console_input}
         agenda.append(input_command)
-        engine.clear_context_items()
+        engine.clear_context_variables()
 
         output_text = ""
         while(len(agenda) > 0):
@@ -77,9 +79,12 @@ def test_chatbot():
                 output_text = output_text + " " + agenda_item
                 continue
 
+            # add rates to outputs
             sub_result = engine.process_assertion(agenda_item)  
 
             if sub_result is None: continue
+
+            # sub_result = add_rates(sub_result)
 
             idx = 0
             for item in sub_result:
@@ -94,6 +99,23 @@ def test_chatbot():
 
         store_command = {"#store": output_command, "#push": "$response"}
         engine.process_assertion(store_command)
+
+# def add_rates(assertion):
+#     if type(assertion) is dict:
+#         new_dict = {}
+#         for key in assertion.keys():
+#             if key == "#output": 
+#                 new_dict["rate"] = 0.05
+#                 new_dict["#output"] = assertion[key]
+#             else:
+#                 new_dict[key] = add_rates(assertion[key])
+#         assertion = new_dict
+#     elif type(assertion) is list:
+#         new_list = []
+#         for item in assertion: 
+#             new_list.append(add_rates(item))
+#         assertion = new_list
+#     return assertion
 
 def test_engine():
     pass
