@@ -48,6 +48,8 @@ def test_chatbot():
     # engine.load_rules_from_file(source_folder + "\\think.json", name="think")
     
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
 
     print("BOT: HI")
 
@@ -57,13 +59,26 @@ def test_chatbot():
     while (loop):
 
         console_input = input("YOU: ")
+
+        if (str.upper(console_input) == "CONTEXT"):
+            print("==================================")
+            for key in engine.context.items.keys():
+                print(key + ":", engine.context.items[key])
+                # if type(engine.context.items[key]) is list:
+                #     print(key + ":")
+                #     idx = 0
+                #     for item in engine.context.items[key]:
+                #         print("[" + str(idx) + "] ", item)
+                #         idx = idx + 1
+                # else:
+                #     print(key + ":", engine.context.items[key])
+                # print("")
+            print("==================================")
+            continue
+
         engine.process_assertion({"#store": console_input, "#push": "$input"})
         console_input = str.upper(console_input)
-
-        if (console_input == "CONTEXT"):
-            print(engine.context.items)
-            continue
-        
+     
         input_command = {"#input": console_input}
         agenda.append(input_command)
         engine.clear_context_variables()
@@ -97,7 +112,7 @@ def test_chatbot():
         output_command = {"#output": "BOT: " + output_text, "rate": 0.05}
         engine.process_assertion(output_command)
 
-        store_command = {"#store": output_command, "#push": "$response"}
+        store_command = {"#store": output_text, "#push": "$response"}
         engine.process_assertion(store_command)
 
 # def add_rates(assertion):
