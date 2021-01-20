@@ -107,7 +107,7 @@ class RulesEngine:
         if type(assertion) is not list: assertions = [assertion]
         else: assertions = assertion
 
-        for assertion in assertions: 
+        for assertion in assertions:
 
             self.context.log_message("")
             self.context.log_message("ASSERT:\t\t" + str(assertion))

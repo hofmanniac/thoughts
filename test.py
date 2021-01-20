@@ -1,7 +1,8 @@
 from thoughts.rules_engine import RulesEngine
 
 def main():
-
+ 
+    # test_replace()
     # test()
     test_chatbot()
 
@@ -39,17 +40,25 @@ def test_chatbot():
     # engine.load_rules_from_file(source_folder + "\\input.json", name="input")
     # engine.load_rules_from_file(source_folder + "\\map.json", name="map")
     # engine.load_rules_from_file(source_folder + "\\pattern.json", name="pattern")
-    # engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
+
+    engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
     # engine.load_rules_from_file(source_folder + "\\person.json", name="person")
+
     # engine.load_rules_from_file(source_folder + "\\set_template.json", name="set_template")
     # engine.load_rules_from_file(source_folder + "\\srai.json", name="srai")
     # engine.load_rules_from_file(source_folder + "\\star.json", name="star")
     # engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
     # engine.load_rules_from_file(source_folder + "\\think.json", name="think")
     
-    engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
-    engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
-    engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
+
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\biography.json", name="biography")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\xfind.json", name="xfind")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\pickup.json", name="pickup")
+
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\ai.json", name="ai")
 
     print("BOT: HI")
 
@@ -88,8 +97,10 @@ def test_chatbot():
 
             agenda_item = agenda.pop(0)
 
-            if "#input" in agenda_item: agenda_item = agenda_item["#input"]
-
+            is_input = False
+            if "#input" in agenda_item: 
+                agenda_item = agenda_item["#input"]
+                is_input = True
             elif type(agenda_item) is str:
                 output_text = output_text + " " + agenda_item
                 continue
@@ -97,9 +108,11 @@ def test_chatbot():
             # add rates to outputs
             sub_result = engine.process_assertion(agenda_item)  
 
-            if sub_result is None: continue
-
-            # sub_result = add_rates(sub_result)
+            if sub_result is None or len(sub_result) == 0:
+                if is_input == True:              
+                    no_match = {"#assert": {"#no-match": console_input}}
+                    sub_result = engine.process_assertion(no_match)
+                if sub_result is None: continue
 
             idx = 0
             for item in sub_result:
@@ -108,6 +121,9 @@ def test_chatbot():
 
         output_text = str.strip(output_text)
         if len(output_text) == 0: continue
+
+        # normally this is handled by the engine, but we want to get consistent values
+        output_text = engine.context.apply_values(output_text, engine.context)
 
         output_command = {"#output": "BOT: " + output_text, "rate": 0.05}
         engine.process_assertion(output_command)
@@ -167,5 +183,27 @@ def test_engine():
     # twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.1.6*
     # Check in to Github
     # twine upload dist/*0.1.6*
+
+def test_replace():
+
+    from thoughts.commands import replace
+
+    withset = {
+        "with you": "with me", 
+        "with me": "with you", 
+        "me": "you", 
+        "you": "me", 
+        "i": "you",
+        "am": "are", 
+        "are": "am"}
+
+    text = "i am with you on that one"
+
+    engine = RulesEngine()
+    engine.context.items["test"] = withset
+
+    replace_command = {"#replace": text, "with": "test"}
+    result = replace.process(replace_command, engine.context)
+    print(result)
 
 main()

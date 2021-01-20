@@ -1,7 +1,49 @@
 from thoughts import context as ctx
-# import re
+import time
 
-def process(command, context):
+def process(command, context: ctx.Context):
+    
+    target = command["#replace"]
+
+    if type(target) is str:
+
+        withset = command["with"]
+
+        new_text = ""
+        tokens = str.split(target, " ")
+        start_pos, end_pos = 0, len(tokens)
+
+        while (start_pos < len(tokens)):
+
+            candidate = ""
+            token_range = tokens[start_pos: end_pos]
+            for token in token_range: candidate = candidate + " " + token
+            candidate = candidate.strip()
+            # print("trying", candidate)
+
+            matched = False
+            for key in withset.keys():
+                match_key = str.strip(key)
+                if match_key == candidate:
+                    # print("...matched on", key)
+                    new_val = withset[key]
+                    new_val = str.strip(new_val)
+                    new_text = new_text + " " + new_val
+                    start_pos = end_pos
+                    end_pos = len(tokens)
+                    matched = True
+                    break
+
+            if matched == False:
+                end_pos = end_pos - 1
+                if end_pos == start_pos:
+                    start_pos = start_pos + 1
+                    end_pos = len(tokens)
+                    
+        return new_text.strip() 
+
+
+def process2(command, context):
     
     target = command["#replace"]
     # target = ctx.Context.find_item(target)

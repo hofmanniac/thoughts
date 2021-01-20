@@ -115,7 +115,7 @@ class Context:
         query["#item"] = item
         return self._find_items(query, False)
 
-    def _find_in_item(self, part, currentItem):
+    def _find_in_item(self, currentItem, part):
         
         if (part.startswith("$")):
 
@@ -167,6 +167,74 @@ class Context:
 
         if ("$" not in text) and ("?" not in text): return text
 
+        results = []
+
+        tokens = text.split(' ')
+
+        for token in tokens:
+
+            if str.startswith(token, "?") or str.startswith(token, "$"):
+
+                parts = token.split('.')
+                current_item = None
+
+                for part in parts:
+                    if current_item is None: # first portion
+                        current_item = self.retrieve_items(part)
+                    else:
+                        if type(current_item) is dict:
+                            if part in current_item: 
+                                current_item = current_item[part]
+                            else:
+                                break
+                        else:
+                            break # later - determine how to handle lists and other types
+
+                    if current_item is None:
+                        current_item = token
+                        break 
+
+                results.append(current_item)
+            else:
+
+                results.append(token) 
+
+        if len(results) == 0: return None
+        if len(results) == 1: return results[0]
+        else:
+            text = ""
+            for result in results: text = text + " " + str(result)
+            text = text.strip()
+            return text
+
+    def retrieve_items(self, item_name, stop_after_first = False):
+        
+        results = []
+
+        if item_name in self.items: 
+            results.append(self.items[item_name])
+            if (stop_after_first): return results[0]
+
+        for ruleset in self.rulesets:
+
+            for item in ruleset["rules"]:
+
+                if (item is None): continue            
+                if "#item" not in item: continue
+
+                if "$" + item["#item"] == item_name \
+                    or item["#item"] == item_name or "?" + item["#item"] == item_name:
+                    results.append(item)
+                    if (stop_after_first): return results[0]
+        
+        if len(results) == 0: return None
+        if len(results) == 1: return results[0]
+        else: return results
+
+    def retrieve2(self, text):
+
+        if ("$" not in text) and ("?" not in text): return text
+
         tokens = text.split(' ')
         result = ""
 
@@ -191,7 +259,7 @@ class Context:
                     else:
                         part_name = part
 
-                    current_item = self._find_in_item(part_name, current_item)
+                    current_item = self._find_in_item(current_item, part_name)
 
                     if part_idx is not None:
                         if type(current_item) is list:

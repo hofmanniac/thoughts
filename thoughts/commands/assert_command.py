@@ -109,7 +109,7 @@ def attempt_rule(rule, assertion, context: ctx.Context):
     # else "when" part is not a non-sequential structure
     else:
 
-        # when = self._resolve_items(when)
+        when = context.apply_values(when, context)
         unification = thoughts.unification.unify(assertion, when)
 
         if unification is None: return None
