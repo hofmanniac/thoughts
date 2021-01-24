@@ -9,6 +9,8 @@ def process(command, context: ctx.Context):
 
         withset = command["with"]
 
+        if type(withset) is not dict: return target
+
         new_text = ""
         tokens = str.split(target, " ")
         start_pos, end_pos = 0, len(tokens)
@@ -37,11 +39,11 @@ def process(command, context: ctx.Context):
             if matched == False:
                 end_pos = end_pos - 1
                 if end_pos == start_pos:
+                    new_text = new_text + " " + candidate
                     start_pos = start_pos + 1
                     end_pos = len(tokens)
                     
         return new_text.strip() 
-
 
 def process2(command, context):
     

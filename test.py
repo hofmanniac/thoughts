@@ -29,9 +29,12 @@ def test_chatbot():
     engine = RulesEngine()
 
     basedir = "C:\\Users\\jeremyho\\source\\repos\\thoughts.chatbot"
-    source_folder = basedir + "\\aiml\\pandorabots\\target"
 
-    # engine.load_rules_from_file(source_folder + "\\bot_prop.json", name="bot_prop")
+    # sample_folder = basedir + "\\aiml\\single"
+    # engine.load_rules_from_file(sample_folder + "\\sample.json", name="sample")
+
+    source_folder = basedir + "\\aiml\\pandorabots\\target"
+    engine.load_rules_from_file(source_folder + "\\bot_prop.json", name="bot_prop")
     # engine.load_rules_from_file(source_folder + "\\bot.json", name="bot")
     # engine.load_rules_from_file(source_folder + "\\condition.json", name="condition")
     # engine.load_rules_from_file(source_folder + "\\date.json", name="date")
@@ -40,25 +43,31 @@ def test_chatbot():
     # engine.load_rules_from_file(source_folder + "\\input.json", name="input")
     # engine.load_rules_from_file(source_folder + "\\map.json", name="map")
     # engine.load_rules_from_file(source_folder + "\\pattern.json", name="pattern")
-
+    # engine.load_rules_from_file(source_folder + "\\topic.json", name="topic")
+    # engine.load_rules_from_file(source_folder + "\\that.json", name="that")
     engine.load_rules_from_file(source_folder + "\\person_sub.json", name="person_sub")
     # engine.load_rules_from_file(source_folder + "\\person.json", name="person")
-
     # engine.load_rules_from_file(source_folder + "\\set_template.json", name="set_template")
     # engine.load_rules_from_file(source_folder + "\\srai.json", name="srai")
     # engine.load_rules_from_file(source_folder + "\\star.json", name="star")
     # engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
     # engine.load_rules_from_file(source_folder + "\\think.json", name="think")
     
-    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
-    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\date.json", name="date")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
     # engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
-
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\biography.json", name="biography")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\xfind.json", name="xfind")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\pickup.json", name="pickup")
-
-    engine.load_rules_from_file(basedir + "\\aiml\\alice\\ai.json", name="ai")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\inquiry.json", name="inquiry")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\imponderables.json", name="imponderables")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\ai.json", name="ai")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\alice.json", name="alice")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\client_profile.json", name="client_profile")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\reduction4.safe.json", name="reduction4.safe")
+    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\bot_profile.json", name="bot_profile")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\update1.json", name="update1")
 
     print("BOT: HI")
 
@@ -84,7 +93,12 @@ def test_chatbot():
                 # print("")
             print("==================================")
             continue
-
+        elif (str.upper(console_input) == "DEBUG"):
+            engine.context.display_log = not engine.context.display_log
+            if engine.context.display_log == True: print("debug is now on")
+            else: print("debug is not off")
+            continue
+            
         engine.process_assertion({"#store": console_input, "#push": "$input"})
         console_input = str.upper(console_input)
      
@@ -102,7 +116,10 @@ def test_chatbot():
                 agenda_item = agenda_item["#input"]
                 is_input = True
             elif type(agenda_item) is str:
-                output_text = output_text + " " + agenda_item
+                if agenda_item == "." or agenda_item == "!" or agenda_item == "?":
+                    output_text = output_text + agenda_item
+                elif len(agenda_item) > 0:
+                    output_text = output_text + " " + agenda_item
                 continue
 
             # add rates to outputs
@@ -129,6 +146,12 @@ def test_chatbot():
         engine.process_assertion(output_command)
 
         store_command = {"#store": output_text, "#push": "$response"}
+        engine.process_assertion(store_command)
+
+        # store $that
+        that_text = output_text.replace("?", "")
+        that_text = that_text.replace("!", "")
+        store_command = {"#store": that_text, "#into": "$that"}
         engine.process_assertion(store_command)
 
 # def add_rates(assertion):

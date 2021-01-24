@@ -83,25 +83,29 @@ def unify(term1, term2):
     
     return None
 
+def tokenize(s:str):
+    s1 = s.split(' ')
+    result = []
+    for t in s1:
+        if t.endswith("?") or t.endswith("."):
+            punc = t[-1]
+            text = t[:len(t)-1]
+            result.append(text)
+            result.append(punc)
+        else:
+            result.append(t)
+    return result
+
 def unify_strings(m1, m2):
     
     if (type(m1) is not str or type(m2) is not str): return None
-    
-    if (m1 == m2):
-        return dict()
-
-    if (m1 == None) or (m2 == None):
-        return None
-
+    if (m1 == m2): return {}
+    if (m1 == None) or (m2 == None): return None
     result = {}
 
-    if (m1 == m2):
-        return result
-
     # print("Comparing", m1, "to", m2)
-
-    a1 = m1.split(' ')
-    a2 = m2.split(' ')
+    a1 = tokenize(m1)
+    a2 = tokenize(m2)
 
     i1 = 0
     i2 = 0

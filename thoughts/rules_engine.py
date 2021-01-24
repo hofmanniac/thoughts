@@ -73,6 +73,7 @@ class RulesEngine:
         with open(file) as f:
             file_rules = list(json.load(f))
             self.context.add_ruleset(file_rules, name, file)
+            print("loaded", len(file_rules), "rules")
 
     def load_rules_from_list(self, rules, name = None):
 
@@ -110,10 +111,11 @@ class RulesEngine:
         for assertion in assertions:
 
             self.context.log_message("")
-            self.context.log_message("ASSERT:\t\t" + str(assertion))
+            self.context.log_message("ASSERT:\t" + str(assertion))
 
             # apply $ items from context
             assertion = self.context.apply_values(assertion, self.context)
+            assertion = self.apply_commands(assertion)
 
             command = None
             if (type(assertion) is dict): command = self._parse_command_name(assertion)
@@ -123,7 +125,22 @@ class RulesEngine:
             result = self.context.merge_into_list(result, sub_result)
         
         return result
+
+    def apply_commands(self, term):
+        
+        if type(term) is dict:
+            result = {}
+            for key in term.keys():
+                if key == "#replace":
+                    new_val = self._call_plugin(key, term)
+                    return new_val
+                else:
+                    new_val = self.apply_commands(term[key])
+                result[key] = new_val
+            return result
             
+        return term
+
     # run the assertion - match and fire rules
     def run_assert(self, assertion):
 

@@ -13,7 +13,7 @@ def process(command, context: ctx.Context):
     
     sub_result = attempt_arcs(assertion, context)
     result = context.merge_into_list(result, sub_result)
-    sub_result = attempt_rules(assertion, context)
+    sub_result = attempt_rulesets(assertion, context)
     result = context.merge_into_list(result, sub_result)
 
     # either store or return the result
@@ -28,13 +28,72 @@ def attempt_arcs(assertion, context: ctx.Context):
         result = context.merge_into_list(result, sub_result)
     return result
 
-def attempt_rules(assertion, context: ctx.Context):
-    # run the agenda item against all items in the context
+def attempt_rulesets(assertion, context: ctx.Context):
+    # run the agenda item against all rulesets in the context
     result = []
     for ruleset in context.rulesets:
-        for rule in ruleset["rules"]:
-            sub_result = attempt_rule(rule, assertion, context)
-            result = context.merge_into_list(result, sub_result)
+        rules = ruleset["rules"]
+        sub_result = attempt_rules(assertion, rules, context)
+        result = context.merge_into_list(result, sub_result)
+    return result
+
+def attempt_rules(assertion, rules:list, context:ctx.Context):
+    # run the agenda item against all items in the ruleset
+    result = []
+    for item in rules:
+        if "#if" in item: 
+            sub_result = attempt_if(item, assertion, context)
+            if type(sub_result) is bool: sub_result = None
+        else: sub_result = attempt_rule(item, assertion, context)
+        result = context.merge_into_list(result, sub_result)
+    return result
+
+def attempt_if(item, assertion, context: ctx.Context):
+    
+    if_portion = None
+    if "#if" in item: if_portion = item["#if"]
+    elif "if" in item: if_portion = item["if"]
+    if if_portion == None: return True
+
+    result = False
+
+    if type(if_portion) is str:
+        compare_name = item["equals"]
+        condition = {"value": if_portion, "equals": compare_name}
+        result = attempt_condition(condition, context)
+
+    elif type(if_portion) is list:
+        list_result = True
+        for condition in if_portion:
+            sub_result = attempt_condition(condition, context)
+            if sub_result == False:
+                list_result = False
+                break
+        result = list_result
+
+    elif type(if_portion is dict):     
+        result = attempt_condition(if_portion, context)
+
+    if result == True:
+        if "then" in item:
+            rules = item["then"]
+            result = attempt_rules(assertion, rules, context)
+            return result
+
+    return result
+
+def attempt_condition(condition:dict, context: ctx.Context):
+    
+    result = False
+
+    x_name = condition["value"]
+    y_name = condition["equals"]
+
+    x_val = context.retrieve(x_name)
+    y_val = context.retrieve(y_name)
+
+    if (x_val == y_val): result = True
+
     return result
 
 def attempt_rule(rule, assertion, context: ctx.Context):
@@ -111,14 +170,16 @@ def attempt_rule(rule, assertion, context: ctx.Context):
 
         when = context.apply_values(when, context)
         unification = thoughts.unification.unify(assertion, when)
-
         if unification is None: return None
 
-        unification["?#when"] = copy.deepcopy(assertion)
-        cloned_rule = copy.deepcopy(rule)
-        context.log_message("MATCHED:\t" + str(cloned_rule))
-        sub_result = process_then(cloned_rule, unification, context)
-        context.merge_into_list(result, sub_result)
+        truth = attempt_if(rule, assertion, context)
+
+        if truth == True:
+            unification["?#when"] = copy.deepcopy(assertion)
+            cloned_rule = copy.deepcopy(rule)
+            context.log_message("MATCHED:\t" + str(cloned_rule))
+            sub_result = process_then(cloned_rule, unification, context)
+            context.merge_into_list(result, sub_result)
 
     return result
 

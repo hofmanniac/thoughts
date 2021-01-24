@@ -1,5 +1,6 @@
 import thoughts.unification as unification
 import uuid
+from time import time
 
 class Context:
 
@@ -8,8 +9,17 @@ class Context:
     items = {}
     arcs = []
     log = []
+    display_log = False
+    last_ms = 0
 
     def log_message(self, message):
+        if self.display_log == True:
+            if len(message) > 0:
+                milliseconds = int(time() * 1000)
+                diff = milliseconds - self.last_ms
+                if self.last_ms == 0: diff = 0
+                self.last_ms = milliseconds
+                print(">", "[" + str(diff) + "ms]\t", message)
         self.log.append(message)
 
     def merge_into_list(self, main_list: list, item):
@@ -169,7 +179,8 @@ class Context:
 
         results = []
 
-        tokens = text.split(' ')
+        # tokens = text.split(' ')
+        tokens = unification.tokenize(text)
 
         for token in tokens:
 
@@ -203,7 +214,11 @@ class Context:
         if len(results) == 1: return results[0]
         else:
             text = ""
-            for result in results: text = text + " " + str(result)
+            for result in results: 
+                if result == "?" or result == ".":
+                    text = text + str(result)
+                else:
+                    text = text + " " + str(result)
             text = text.strip()
             return text
 
