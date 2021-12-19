@@ -83,6 +83,15 @@ def unify(term1, term2):
     
     return None
 
+def unify_item_with_list(item, items:list):
+    results = []
+    for list_item in items:
+        unification = unify_strings(item, list_item)
+        if unification is not None:
+            results.append(unification)
+    if len(results) > 0: return results
+    else: return None
+
 def tokenize(s:str):
     s1 = s.split(' ')
     result = []
@@ -103,6 +112,9 @@ def unify_strings(m1, m2):
     if (m1 == None) or (m2 == None): return None
     result = {}
 
+    if "?" not in m1 and "*" not in m1 and "?" not in m2 and "*" not in m2 and m1[0] != m2[0]:
+        return None
+        
     # print("Comparing", m1, "to", m2)
     a1 = tokenize(m1)
     a2 = tokenize(m2)

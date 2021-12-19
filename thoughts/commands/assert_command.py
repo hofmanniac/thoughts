@@ -31,10 +31,19 @@ def attempt_arcs(assertion, context: ctx.Context):
 def attempt_rulesets(assertion, context: ctx.Context):
     # run the agenda item against all rulesets in the context
     result = []
-    for ruleset in context.rulesets:
-        rules = ruleset["rules"]
-        sub_result = attempt_rules(assertion, rules, context)
+
+    candidates = context.search_index(assertion)
+    if candidates is not None:
+        sub_result = attempt_rules(assertion, candidates, context)
         result = context.merge_into_list(result, sub_result)
+    
+    else:
+    #if len(result) == 0:
+        for ruleset in context.rulesets:
+            rules = ruleset["rules"]
+            sub_result = attempt_rules(assertion, rules, context)
+            result = context.merge_into_list(result, sub_result)
+            
     return result
 
 def attempt_rules(assertion, rules:list, context:ctx.Context):
@@ -75,8 +84,8 @@ def attempt_if(item, assertion, context: ctx.Context):
         result = attempt_condition(if_portion, context)
 
     if result == True:
-        if "then" in item:
-            rules = item["then"]
+        if "#then" in item:
+            rules = item["#then"]
             result = attempt_rules(assertion, rules, context)
             return result
 
@@ -98,9 +107,9 @@ def attempt_condition(condition:dict, context: ctx.Context):
 
 def attempt_rule(rule, assertion, context: ctx.Context):
 
-    if "when" not in rule: return # if the item is not a rule then skip it
+    if "#when" not in rule: return # if the item is not a rule then skip it
     result = [] 
-    when = rule["when"] # get the "when" portion of the rule
+    when = rule["#when"] # get the "when" portion of the rule
     # self.log_message("EVAL:\t" + str(assertion) + " AGAINST " + str(rule))
 
     # if the "when" portion is a list (sequence)
@@ -187,7 +196,7 @@ def attempt_rule(rule, assertion, context: ctx.Context):
 def process_then(rule, unification, context: ctx.Context):
     
     result = []
-    then = rule["then"] # get the "then" portion (consequent) for the rule
+    then = rule["#then"] # get the "then" portion (consequent) for the rule
 
     # grab the rule's sequence positional information
     # will apply this to each item in the "then" portion to pass forward

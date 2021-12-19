@@ -11,6 +11,89 @@ class Context:
     log = []
     display_log = False
     last_ms = 0
+    index = {}
+
+    def __init__(self):
+        self.default_ruleset = None
+        self.rulesets = []
+        self.items = {}
+        self.arcs = []
+        self.log = []
+        self.display_log = False
+        self.last_ms = 0
+        self.index = {}
+
+    def print_items(self):
+        print("==================================")
+        for key in self.items.keys():
+            print(key + ":", self.items[key])
+            # if type(engine.context.items[key]) is list:
+            #     print(key + ":")
+            #     idx = 0
+            #     for item in engine.context.items[key]:
+            #         print("[" + str(idx) + "] ", item)
+            #         idx = idx + 1
+            # else:
+            #     print(key + ":", engine.context.items[key])
+            # print("")
+        print("==================================")
+
+    def update_index(self, term):
+        
+        if "when" not in term: return
+
+        when_part = term["when"]
+        if type(when_part) is str:
+            tokens = unification.tokenize(when_part)
+            for token in tokens:
+                if str.startswith(token, "?") or str.startswith(token, "$"): continue
+                self.append_dict(self.index, token, term)
+        elif type(when_part) is dict:
+            if "#no-match" in when_part:
+                self.append_dict(self.index, "#no-match", term)
+
+    def search_index(self, term):
+        result = []
+        if type(term) is str:
+            tokens = unification.tokenize(term)
+            for token in tokens:
+                if token not in self.index: continue
+                items = self.index[token]
+                if items is not None:
+                    if type(items) is list:
+                        for item in items:
+                            if item not in result: result.append(item)
+                    elif items not in result: result.append(items)
+        elif type(term) is dict:
+            for key in term.keys():
+                if key == "#no-match": 
+                    items = self.search_index(key)
+                else: 
+                    items = self.search_index(term[key])
+                if items is not None: 
+                    for item in items:
+                        if item not in result: result.append(item)
+
+        if len(result) == 0: return None
+        else: return result
+
+    def index_rules(self, rules:list):
+        for rule in rules: self.update_index(rule)
+
+    def append_dict(self, d:dict, key:str, term):
+        if key in d.keys(): 
+            current_val = d[key]
+            if (current_val is None): d[key] = term
+            else:
+                if type(current_val) is list:
+                    if term not in current_val: # uses is or ==?
+                        current_val.append(term)
+                else:
+                    if type(current_val) is str and type(term) is str and current_val != term:
+                        d[key] = [current_val, term]
+                    elif current_val is not term:
+                        d[key] = [current_val, term]
+        else: d[key] = term
 
     def log_message(self, message):
         if self.display_log == True:
@@ -27,14 +110,36 @@ class Context:
         if main_list is None: main_list = []     
         if type(item) is list:
             for sub_item in item: main_list.append(sub_item)
-        else:
-            main_list.append(item)
+        else: main_list.append(item)
         return main_list
 
     def add_ruleset(self, rules: list, name: str = None, path: str = None):
+
         if name is None: name = str(uuid.uuid4())
-        ruleset = {"name": name, "rules": rules, "path": path}
-        self.rulesets.append(ruleset)
+
+        ruleset = next(filter(lambda rs: rs["name"] == name, self.rulesets), None)
+
+        if ruleset is None:
+
+            ruleset = {"name": name, "rules": rules, "path": path}
+
+            # sorted_set = []
+            # added = False
+            # for item in self.rulesets:
+            #     if len(rules) < len(item["rules"]):
+            #         added = True
+            #         sorted_set.append(ruleset)
+            #     sorted_set.append(item)
+            # if added == False: sorted_set.append(ruleset)
+            # self.rulesets = sorted_set
+
+            self.rulesets.append(ruleset)
+
+            self.index_rules(rules)
+
+    def add_rule(self, rule):
+        self.default_ruleset["rules"].append(rule)
+        self.update_index(rule)
 
     def clear_variables(self):
         for key in self.items.keys():

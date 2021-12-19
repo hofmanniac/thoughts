@@ -2,7 +2,7 @@ import json
 import os
 from thoughts.context import Context
 # import thoughts.unification
-# import copy
+import copy
 # from thoughts.commands import assert_command
 
 class RulesEngine:
@@ -20,6 +20,9 @@ class RulesEngine:
     #region Constructor
 
     def __init__(self):
+        
+        self.context = Context()
+        self._agenda = []
         self._load_plugins()
 
         # add the default ruleset
@@ -76,13 +79,12 @@ class RulesEngine:
             print("loaded", len(file_rules), "rules")
 
     def load_rules_from_list(self, rules, name = None):
-
-        self.log_message("LOAD:\t" + str(len(rules)))
+        self.context.log_message("LOAD:\t" + str(len(rules)))
         self.context.add_ruleset(rules, name, None)
 
     # add a new rule manually
     def add_rule(self, rule):
-        self.context.default_ruleset["rules"].append(rule)
+        self.context.add_rule(rule)
 
     def clear_arcs(self):
         self._arcs = []
@@ -115,39 +117,62 @@ class RulesEngine:
 
             # apply $ items from context
             assertion = self.context.apply_values(assertion, self.context)
-            assertion = self.apply_commands(assertion)
 
             command = None
             if (type(assertion) is dict): command = self._parse_command_name(assertion)
-            if command is None: command = "#assert" #assertion = {"#assert": assertion}
+            
+            if command is None: command = "#assert"
+            else: 
+                assertion = self.apply_commands(assertion)
 
             sub_result = self._call_plugin(command, assertion)
             result = self.context.merge_into_list(result, sub_result)
         
         return result
 
-    def apply_commands(self, term):
-        
+    def apply_commands(self, term, eval = False):       
         if type(term) is dict:
             result = {}
             for key in term.keys():
-                if key == "#replace":
-                    new_val = self._call_plugin(key, term)
-                    return new_val
+                if eval == True:
+                    if key == "#replace":
+                        new_val = self._call_plugin(key, term)
+                        return new_val
+                    else:
+                        new_val = self.apply_commands(term[key], eval=True)
                 else:
-                    new_val = self.apply_commands(term[key])
+                    new_val = self.apply_commands(term[key], eval=True)
                 result[key] = new_val
-            return result
-            
+            return result           
         return term
+    
+    def process_assertions(self, assertions):
+        agenda = assertions
+        conclusions = []
 
-    # run the assertion - match and fire rules
+        while(len(agenda) > 0):
+
+            agenda_item = agenda.pop(0)
+            sub_result = self.process_assertion(agenda_item)
+            
+            if sub_result is None or len(sub_result) == 0: continue
+            agenda.extend(sub_result)
+
+            sub_conclusions = copy.deepcopy(sub_result)
+            conclusions.extend(sub_conclusions)
+
+        return conclusions
+
+       # run the assertion - match and fire rules
     def run_assert(self, assertion):
 
         # parse json-style string assertion into dict
         if (type(assertion) is str):
             if (assertion.startswith("{")):
                 assertion = json.loads(assertion)
+
+        if type(assertion) is list:
+            self._agenda.extend(assertion)
 
         # add assertion to the agenda
         self._agenda.append(assertion)

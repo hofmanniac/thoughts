@@ -1,0 +1,14 @@
+[
+  {
+    "#when": "test2 ?var1",
+    "#then": "?var1"
+  },
+
+  {
+    "#when": "run-test",
+    "#then": [
+      { "#assert": "test2 val2", "into": "?result" },
+      { "#if": "?result", "equals": "val2", "#then": "pass", "#else": "fail" }
+    ]
+  }
+]

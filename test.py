@@ -1,10 +1,27 @@
 from thoughts.rules_engine import RulesEngine
 
+# pip install twine
+# pip install wheel
+
+# update version in setup.py
+# update version in all __init__.py files (2 places)
+# update version number below (2 places)
+# python setup.py sdist bdist_wheel
+# twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.1.6*
+# Check in to Github
+# twine upload dist/*0.1.6*
+
+engine = RulesEngine()
+
+engine.add_rule({"when": "test", "then": {"#output": "hello!"} })
+engine.run_assert("test")
+
 def main():
  
+    test_engine()
     # test_replace()
     # test()
-    test_chatbot()
+    # test_chatbot()
 
 def test():
 
@@ -53,13 +70,13 @@ def test_chatbot():
     # engine.load_rules_from_file(source_folder + "\\state2capital_map.json", name="state2capital_map")
     # engine.load_rules_from_file(source_folder + "\\think.json", name="think")
     
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\pickup.json", name="pickup")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\atomic.json", name="atomic")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\date.json", name="date")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\knowledge.json", name="knowledge")
-    # engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\gossip.json", name="gossip")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\biography.json", name="biography")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\xfind.json", name="xfind")
-    engine.load_rules_from_file(basedir + "\\aiml\\alice\\pickup.json", name="pickup")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\inquiry.json", name="inquiry")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\imponderables.json", name="imponderables")
     # engine.load_rules_from_file(basedir + "\\aiml\\alice\\ai.json", name="ai")
@@ -68,6 +85,7 @@ def test_chatbot():
     # engine.load_rules_from_file(basedir + "\\aiml\\alice\\reduction4.safe.json", name="reduction4.safe")
     # engine.load_rules_from_file(basedir + "\\aiml\\alice\\bot_profile.json", name="bot_profile")
     engine.load_rules_from_file(basedir + "\\aiml\\alice\\update1.json", name="update1")
+    engine.load_rules_from_file(basedir + "\\aiml\\alice\\personality.json", name="personality")
 
     print("BOT: HI")
 
@@ -79,24 +97,12 @@ def test_chatbot():
         console_input = input("YOU: ")
 
         if (str.upper(console_input) == "CONTEXT"):
-            print("==================================")
-            for key in engine.context.items.keys():
-                print(key + ":", engine.context.items[key])
-                # if type(engine.context.items[key]) is list:
-                #     print(key + ":")
-                #     idx = 0
-                #     for item in engine.context.items[key]:
-                #         print("[" + str(idx) + "] ", item)
-                #         idx = idx + 1
-                # else:
-                #     print(key + ":", engine.context.items[key])
-                # print("")
-            print("==================================")
+            engine.context.print_items()
             continue
         elif (str.upper(console_input) == "DEBUG"):
             engine.context.display_log = not engine.context.display_log
             if engine.context.display_log == True: print("debug is now on")
-            else: print("debug is not off")
+            else: print("debug is now off")
             continue
             
         engine.process_assertion({"#store": console_input, "#push": "$input"})
@@ -154,40 +160,30 @@ def test_chatbot():
         store_command = {"#store": that_text, "#into": "$that"}
         engine.process_assertion(store_command)
 
-# def add_rates(assertion):
-#     if type(assertion) is dict:
-#         new_dict = {}
-#         for key in assertion.keys():
-#             if key == "#output": 
-#                 new_dict["rate"] = 0.05
-#                 new_dict["#output"] = assertion[key]
-#             else:
-#                 new_dict[key] = add_rates(assertion[key])
-#         assertion = new_dict
-#     elif type(assertion) is list:
-#         new_list = []
-#         for item in assertion: 
-#             new_list.append(add_rates(item))
-#         assertion = new_list
-#     return assertion
-
 def test_engine():
-    pass
+
+    engine = RulesEngine()
 
     # engine.add_rule('{"when": "test", "then": {"#output": "hello!"} }')
     # engine.run_assert("test")
 
-    # engine.load_rules("\\..\\rules\\rules.json")
-    # engine.load_rules("\\..\\samples\\hello_world.json")
-    # engine.load_rules("\\..\\samples\\choose_your_own_adventure.json")
-    # engine.load_rules("\\..\\samples\\sequence_nlp.json")
-    # engine.load_rules("\\..\\samples\\academic\winograd\winograd_1.json")
-    # engine.load_rules("\\..\\samples\\unification.json")
-    # engine.load_rules("\\..\\rules\\nlp_head_grammar.json")
-    # engine.load_rules("\\..\\rules\\merge_unification.json")
-    # engine.load_rules("\\..\\samples\\academic\\squad\\ipcc.json")
+    engine.load_rules_from_file("\\..\\tests\\test_001.json")
+    engine.load_rules_from_file("\\..\\tests\\test_002.json")
+    engine.load_rules_from_file("\\..\\tests\\test_003.json")
+    engine.load_rules_from_file("\\..\\tests\\test_004.json")
+
+    # engine.load_rules_from_file("\\..\\rules\\rules.json")
+    # engine.load_rules_from_file("\\..\\samples\\hello_world.json")
+    # engine.load_rules_from_file("\\..\\samples\\choose_your_own_adventure.json")
+    # engine.load_rules_from_file("\\..\\samples\\sequence_nlp.json")
+    # engine.load_rules_from_file("\\..\\samples\\academic\winograd\winograd_1.json")
+    # engine.load_rules_from_file("\\..\\rules\\winograd_1_full.json")
+    # engine.load_rules_from_file("\\..\\samples\\unification.json")
+    # engine.load_rules_from_file("\\..\\rules\\nlp_head_grammar.json")
+    # engine.load_rules_from_file("\\..\\rules\\merge_unification.json")
+    # engine.load_rules_from_file("\\..\\samples\\academic\\squad\\ipcc.json")
     # engine.load_rules_from_file("\\..\\rules\\test.json", name="test")
-    # engine.run_console()
+    engine.run_console()
 
     # # create a manual rule
     # rule = {"when": "what time is it", "then": "time to get a new watch"}
@@ -195,17 +191,6 @@ def test_engine():
 
     # # run an assertion
     # engine.run_assert("what time is it")
-
-    # pip install twine
-    # pip install wheel
-
-    # update version in setup.py
-    # update version in all __init__.py files (2 places)
-    # update version number below (2 places)
-    # python setup.py sdist bdist_wheel
-    # twine upload --repository-url https://test.pypi.org/legacy/ dist/*0.1.6*
-    # Check in to Github
-    # twine upload dist/*0.1.6*
 
 def test_replace():
 
