@@ -1,0 +1,18 @@
+[
+    {   "when": {"cat" :"n", "lemma": "?entity"},
+        "then": {"#output": "entity is ?entity"}
+    },
+
+    {   "when": [
+            {"cat" :"art", "lemma": "?det"},
+            {"cat" :"n", "lemma": "?entity"}],
+        "then": {"#output": "entity is ?x with determiner ?det"}
+    },
+
+    {   "when": {"#or" : [
+            {"input": "hello"}, 
+            {"input": "hi"}]},
+        "then": {"#output": "hello, world"}
+    }
+]
+

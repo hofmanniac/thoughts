@@ -1,0 +1,7 @@
+[
+  {
+    "when": "IF ?w1 IS SHORTER THAN ?w2 WHO IS TALLER",
+    "if": [],
+    "then": [{ "#output": "?w2 is taller." }]
+  }
+]

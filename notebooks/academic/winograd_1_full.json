@@ -1,0 +1,33 @@
+[
+    {"source": "https://cs.nyu.edu/faculty/davise/papers/WinogradSchemas/WSCollection.xml"},
+    {"item": "3", "sample": "The trophy doesn't fit inside the suitcase because it is too large"},
+    {"item": "4", "sample": "The trophy doesn't fit inside the suitcase because it is too small"},
+    {"item": "5", "sample": "The lamp doesn't fit inside the car because it is too small."},
+
+    {"input": "The trophy doesn't fit inside the suitcase because it is too small"},
+
+    {"when": "winograd ?num",
+     "then": {"input": "$?num.sample"}
+    },
+  
+    { "when": {"input": "?effect because ?cause"},
+      "then": [{"parse": "?effect", "sem": "effect"}, {"parse": "?cause", "sem": "cause"}]
+    },
+
+    { "when": {"parse": "?x is too ?quality", "sem": "?sem"},
+      "then": [{"item": "?x", "is": {"quality": "?quality", "degree": "excessive"}, "sem": "?sem"}]
+    },
+
+    { "when": {"parse": "?x doesn't fit inside ?y", "sem": "effect"},
+      "then": [{"item": "?x", "is": {"quality": "large", "degree": "excessive"}, "sem": "cause"},
+               {"item": "?y", "is": {"quality": "small", "degree": "excessive"}, "sem": "cause"}]
+    },
+
+    { "when": {"item": "?x", "is": {"quality": "?y", "degree": "excessive"}, "sem": "?sem"},
+      "then": {"#output": "?sem: ?x is too ?y"}
+    }, 
+
+    { "when": {"input": "what was too ?quality"},
+      "then": {"#output": "?quality"}
+    }
+  ]

@@ -13,33 +13,6 @@ from thoughts.rules_engine import RulesEngine
 
 engine = RulesEngine()
 
-engine.add_rule({"when": "test", "then": {"#output": "hello!"} })
-engine.run_assert("test")
-
-def main():
- 
-    test_engine()
-    # test_replace()
-    # test()
-    # test_chatbot()
-
-def test():
-
-    engine = RulesEngine()
-
-    # engine.load_rules_from_file("\\..\\rules\\context.json")
-    # # engine.process_assertion("test1")
-    # #engine.run_assert("test1")
-    # #engine.run_assert("test2 happy")
-    # # engine.run_assert("test3 dog")
-    # # engine.run_assert("test7 dog")
-    # engine.run_assert("test8 dog")
-
-    engine.load_rules_from_file("\\..\\rules\\regression1.json")
-    engine.run_assert("test1")
-    engine.run_assert("test2 pass")
-    engine.run_assert("test3 pass")
-
 def test_chatbot():
 
     # start a new inference engine with sample rules
@@ -160,38 +133,6 @@ def test_chatbot():
         store_command = {"#store": that_text, "#into": "$that"}
         engine.process_assertion(store_command)
 
-def test_engine():
-
-    engine = RulesEngine()
-
-    # engine.add_rule('{"when": "test", "then": {"#output": "hello!"} }')
-    # engine.run_assert("test")
-
-    engine.load_rules_from_file("\\..\\tests\\test_001.json")
-    engine.load_rules_from_file("\\..\\tests\\test_002.json")
-    engine.load_rules_from_file("\\..\\tests\\test_003.json")
-    engine.load_rules_from_file("\\..\\tests\\test_004.json")
-
-    # engine.load_rules_from_file("\\..\\rules\\rules.json")
-    # engine.load_rules_from_file("\\..\\samples\\hello_world.json")
-    # engine.load_rules_from_file("\\..\\samples\\choose_your_own_adventure.json")
-    # engine.load_rules_from_file("\\..\\samples\\sequence_nlp.json")
-    # engine.load_rules_from_file("\\..\\samples\\academic\winograd\winograd_1.json")
-    # engine.load_rules_from_file("\\..\\rules\\winograd_1_full.json")
-    # engine.load_rules_from_file("\\..\\samples\\unification.json")
-    # engine.load_rules_from_file("\\..\\rules\\nlp_head_grammar.json")
-    # engine.load_rules_from_file("\\..\\rules\\merge_unification.json")
-    # engine.load_rules_from_file("\\..\\samples\\academic\\squad\\ipcc.json")
-    # engine.load_rules_from_file("\\..\\rules\\test.json", name="test")
-    engine.run_console()
-
-    # # create a manual rule
-    # rule = {"when": "what time is it", "then": "time to get a new watch"}
-    # engine.add_rule(rule)
-
-    # # run an assertion
-    # engine.run_assert("what time is it")
-
 def test_replace():
 
     from thoughts.commands import replace
@@ -213,5 +154,3 @@ def test_replace():
     replace_command = {"#replace": text, "with": "test"}
     result = replace.process(replace_command, engine.context)
     print(result)
-
-main()
