@@ -18,7 +18,7 @@ def test_chatbot():
     # start a new inference engine with sample rules
     engine = RulesEngine()
 
-    basedir = "C:\\Users\\jeremyho\\source\\repos\\thoughts.chatbot"
+    basedir = "my_repo_location\\repos\\thoughts.chatbot"
 
     # sample_folder = basedir + "\\aiml\\single"
     # engine.load_rules_from_file(sample_folder + "\\sample.json", name="sample")
