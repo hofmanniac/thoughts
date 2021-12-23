@@ -148,6 +148,8 @@ class Context:
 
     def store_item(self, assertion, item):
 
+        if type(item) is list and len(item) == 1: item = item[0]
+        
         if ("#into" in assertion):
             var_name = assertion["#into"]
             self.items[var_name] = item
@@ -423,7 +425,13 @@ class Context:
             result = {}
             for key in term.keys():
                 if key == "#into" or key == "#append" or key == "#push":
-                    result[key] = term[key]
+                    if type(term[key] is str):
+                        if type(provider) is dict:
+                            sub_value = unification.retrieve(term[key], provider)
+                            if sub_value is not None:
+                                result[key] = sub_value
+                    if key not in result:
+                        result[key] = term[key]
                 elif (key == "#combine"):
                     items_to_combine = term["#combine"]
                     newval = {}
