@@ -113,7 +113,7 @@ class Context:
         else: main_list.append(item)
         return main_list
 
-    def add_ruleset(self, rules: list, name: str = None, path: str = None):
+    def _add_rules(self, rules: list, name: str = None, path: str = None):
 
         if name is None: name = str(uuid.uuid4())
 

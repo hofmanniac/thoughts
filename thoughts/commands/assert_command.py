@@ -21,11 +21,18 @@ def process(command, context: ctx.Context):
     if stored == False: return result
 
 def attempt_arcs(assertion, context: ctx.Context):
+   
     # run the agenda item against all arcs
     result = []
-    for rule in context.arcs:           
-        sub_result = attempt_rule(rule, assertion, context)
+    for arc in context.arcs:   
+        sub_result = attempt_rule(arc, assertion, context)
         result = context.merge_into_list(result, sub_result)
+
+    # remove arcs marked for removal (completed, non-positionally aware)
+    for arc in context.arcs:
+        if "#remove-me" in arc:
+            context.arcs.remove(arc)
+
     return result
 
 def attempt_rulesets(assertion, context: ctx.Context):
@@ -117,8 +124,8 @@ def attempt_rule(rule, assertion, context: ctx.Context):
 
         # arcs - test if arc position matches assertion's position
         # (ignore if no positional information)
-        assertion_start = 0
-        assertion_end = 0
+        assertion_start = None
+        assertion_end = None
         rule_start = None
         rule_end = None
         if ("#seq-start" in assertion): assertion_start = assertion["#seq-start"]        
@@ -169,10 +176,16 @@ def attempt_rule(rule, assertion, context: ctx.Context):
             context.log_message("ARC-COMPLETE:\t" + str(cloned_rule))
             sub_result = process_then(cloned_rule, unification, context)
             context.merge_into_list(result, sub_result)
-
+            
         else: # arc did not complete - add to active arcs          
             context.log_message("ARC-EXTEND:\t" + str(cloned_rule))
+            cloned_rule["#is-arc"] = True
             context.arcs.append(cloned_rule)
+
+        # if this is a non-positionally aware arc
+        # then signal to remove it - a full constituent was found
+        if rule_start is None and "#is-arc" in cloned_rule:
+            rule["#remove-me"] = True
 
     # else "when" part is not a non-sequential structure
     else:

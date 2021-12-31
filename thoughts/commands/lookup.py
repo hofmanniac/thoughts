@@ -57,13 +57,14 @@ def process(command, context: ctx.Context ):
                     result.append(new_item)
 
     # if no result, then echo back the value as-is
-    if (len(result) == 0):
-        new_item = copy.deepcopy(target)
-        # add position information (inherited from lookup command)    
-        if (type(new_item) is dict): 
-            if ("#seq-start" in command): new_item["#seq-start"] = command["#seq-start"]
-            if ("#seq-end" in command): new_item["#seq-end"] = command["#seq-end"]
-        result.append(new_item)
+    # dec-28 2021 - removing this for now
+    # if (len(result) == 0):
+    #     new_item = copy.deepcopy(target)
+    #     # add position information (inherited from lookup command)    
+    #     if (type(new_item) is dict): 
+    #         if ("#seq-start" in command): new_item["#seq-start"] = command["#seq-start"]
+    #         if ("#seq-end" in command): new_item["#seq-end"] = command["#seq-end"]
+    #     result.append(new_item)
 
     if "#into" in command:
         context.store_item(command, result)

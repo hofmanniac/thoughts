@@ -1,6 +1,7 @@
+from thoughts import context as ctx
 import thoughts.unification
 
-def process(command, context):
+def process(command, context: ctx.Context):
 
     result = []
 
@@ -12,18 +13,23 @@ def process(command, context):
     pos = 0
 
     for token in tokens:
-
-        unification = {}
-        unification["#"] = token
-        apply = command["assert"]
-        new_apply = thoughts.unification.apply_unification(apply, unification)
         
+        new_fact = {}
+
+        if "assert" in command:        
+            template = command["assert"]
+            unification = {}
+            unification["#"] = token
+            new_fact = context.apply_values(template, unification)
+        else:
+            new_fact["#"] = token
+
         # add position information
-        new_apply["#seq-start"] = pos
-        new_apply["#seq-end"] = pos + 1
+        new_fact["#seq-start"] = pos
+        new_fact["#seq-end"] = pos + 1
         pos = pos + 1
         
-        result.append(new_apply)
+        result.append(new_fact)
 
     if (len(result) == 0): return None
     else: return result

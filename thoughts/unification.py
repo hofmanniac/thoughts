@@ -181,7 +181,7 @@ def unify_strings(m1, m2):
                 if (i1 + 1 < len(a1)): n1 = a1[i1 + 1]
                 if (i2 + 1 < len(a2)): n2 = a2[i2 + 1]
 
-                if (n1 == n2):
+                if (n1 == n2 or n2.startswith("?")):
                 
                     result[w2] = boundvalue.strip()
                     boundvalue = ""
@@ -199,7 +199,7 @@ def unify_strings(m1, m2):
                 if (i1 + 1 < len(a1)): n1 = a1[i1 + 1]
                 if (i2 + 1 < len(a2)): n2 = a2[i2 + 1]
 
-                if (n1 == n2):
+                if (n1 == n2 or n1.startswith("?")):
                 
                     result[w1] = boundvalue.strip()
                     boundvalue = ""
