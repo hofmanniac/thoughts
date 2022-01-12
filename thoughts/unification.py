@@ -248,6 +248,9 @@ def retrieve(term, unification):
             return term
     else:
         for key in unification.keys():
-            new_val = str(unification[key])
+            # new_val = str(unification[key])
+            new_val = str(unification[key])    
             term = term.replace(key, new_val)
+            # else:
+            #     term = new_val
         return term

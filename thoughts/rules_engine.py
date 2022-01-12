@@ -1,8 +1,14 @@
 import json
 import os
+from build.lib import thoughts
+from build.lib.thoughts import context
 from thoughts.context import Context
+from thoughts.commands import tokenize
+
 # import thoughts.unification
 import copy
+
+#from thoughts.unification import tokenize
 # from thoughts.commands import assert_command
 
 class RulesEngine:
@@ -56,104 +62,123 @@ class RulesEngine:
         self.context._add_rules(rules, name, None)
 
     def clear_arcs(self):
-        self._arcs = []
+        self.context.arcs = []
 
     def clear_context_variables(self):
         self.context.clear_variables()
+   
+    def process(self, assertions, process_single=False, extract_conclusions = True):
+        result = self._process(assertions, process_single)
+        if extract_conclusions:
+            return self.extract_final_conclusions(result)
+        else:
+            return result
 
-    def extract_leaf_nodes(self, tree):
-        
-        if type(tree) is not list: tree = [tree]
+    def process_single(self, assertions):
+        return self._process(assertions, process_single=True)
 
-        leafs = []
-
-        def _get_leaf_nodes(node):
-            if node is not None:
-                if "#conclusions" in node and node["#conclusions"] is not None:
-                    if len(node["#conclusions"]) > 0:
-                        new_node = copy.deepcopy(node)
-                        del new_node["#conclusions"]
-                        leafs.append(new_node)
-                    for n in node["#conclusions"]:
-                        _get_leaf_nodes(n)
-        
-        for tree_node in tree:
-            _get_leaf_nodes(tree_node)
-
-        return leafs
-
-    def process2(self, assertions):
-        if type(assertions) is not list: assertions = [assertions]
-
-        loop = True
-        while loop:
-            assertion = self.find_next(assertions)
-            conclusions = self._process_single(assertion)
-            assertion["#conclusions"] = conclusions
-            if conclusions is not None: loop = False
+    def _add_sequence_info(self, assertions):
+        for pos, assertion in enumerate(assertions):
+            assertion["#seq-start"] = pos
+            assertion["#seq-end"] = pos + 1
         return assertions
 
-    def find_next(self, assertions):
+    def _wrap_literals_in_assert(self, assertions):
+        if assertions is None: return None
+        for i, assertion in enumerate(assertions):
+            if type(assertion) is not dict and type(assertion) is not list:
+                assertions[i] = {"#assert": assertion}
+        return assertions
+
+    def _process(self, assertions, process_single = False):
+
+        # if nothing to process, then done
+        if assertions is None: return None
+
+        # convert to a list
+        if type(assertions) is not list: assertions = [assertions]
+
+        # wrap literal assertions in an #assert command
+        # this will allow us to track metadata about the assertion
+        assertions = self._wrap_literals_in_assert(assertions)
+
+        # add sequence information
+        assertions = self._add_sequence_info(assertions)
+
+        # continue processing until no more assertions generated
+        # or if process_single is True and conclusions were drawn
+        while True:
+            assertion = self._find_next(assertions)
+            if assertion is None: break
+            conclusions = self._process_single(assertion)
+            assertion["#conclusions"] = conclusions
+            if process_single == True:
+                if conclusions is not None: break
+     
+        # return the assertion trees
+        return assertions
+
+    def _find_next(self, assertions):
         for assertion in assertions:
             if "#conclusions" not in assertion: 
                 return assertion
             else:
                 if assertion["#conclusions"] is not None:
-                    next = self.find_next(assertion["#conclusions"])
+                    next = self._find_next(assertion["#conclusions"])
                     if next is not None: return next
 
-    def process_tree(self, assertions):
+    # def process_tree(self, assertions):
     
-        results = []
+    #     results = []
 
-        if type(assertions) is not list:
-            assertions = [assertions]
+    #     if type(assertions) is not list:
+    #         assertions = [assertions]
 
-        for assertion in assertions:
-            sub_result = self._process_single(assertion)
+    #     for assertion in assertions:
+    #         sub_result = self._process_single(assertion)
 
-            if sub_result is not None:
-                sub_result = self.process_tree(sub_result)
+    #         if sub_result is not None:
+    #             sub_result = self.process_tree(sub_result)
 
-            new_result = copy.deepcopy(assertion)
-            if type(new_result) is not dict: new_result = {"#assertion": new_result} 
-            new_result["#conclusions"] = sub_result
-            results.append(new_result)
+    #         new_result = copy.deepcopy(assertion)
+    #         if type(new_result) is not dict: new_result = {"#assertion": new_result} 
+    #         new_result["#conclusions"] = sub_result
+    #         results.append(new_result)
 
-        return results
+    #     return results
 
-    def process(self, assertions):
+    # def process_original(self, assertions):
        
-        agenda = []
-        conclusions = []
+    #     agenda = []
+    #     conclusions = []
 
-        if type(assertions) is not list: agenda = [assertions]
-        else: agenda = assertions
+    #     if type(assertions) is not list: agenda = [assertions]
+    #     else: agenda = assertions
 
-        while(len(agenda) > 0):
+    #     while(len(agenda) > 0):
 
-            agenda_item = agenda.pop(0)
+    #         agenda_item = agenda.pop(0)
 
-            if type(agenda_item) is list:
-                agenda = agenda_item + agenda
-                continue
+    #         if type(agenda_item) is list:
+    #             agenda = agenda_item + agenda
+    #             continue
             
-            sub_result = self._process_single(agenda_item)
+    #         sub_result = self._process_single(agenda_item)
             
-            if sub_result is not None and len(sub_result) > 0:
+    #         if sub_result is not None and len(sub_result) > 0:
 
-                agenda.insert(0, sub_result)
-                sub_conclusions = copy.deepcopy(sub_result)
+    #             agenda.insert(0, sub_result)
+    #             sub_conclusions = copy.deepcopy(sub_result)
                 
-                if len(sub_conclusions) == 1: sub_conclusions = sub_conclusions[0]
-                conclusions.append(sub_conclusions)
+    #             if len(sub_conclusions) == 1: sub_conclusions = sub_conclusions[0]
+    #             conclusions.append(sub_conclusions)
 
-                # conclusion = copy.deepcopy(agenda_item)
-                # conclusion["#conclusions"] = sub_conclusions
-                # conclusions.append(conclusion)
+    #             # conclusion = copy.deepcopy(agenda_item)
+    #             # conclusion["#conclusions"] = sub_conclusions
+    #             # conclusions.append(conclusion)
                 
 
-        return conclusions
+    #     return conclusions
 
     # def process2(self, assertions):
     #     """Processes the assertions and any resulting assertions until no additional assertions are generated.
@@ -215,11 +240,44 @@ class RulesEngine:
         command = None
         if (type(assertion) is dict): command = self._parse_command_name(assertion)
         
-        if command is None: command = "#assert"
+        if command is None or command == "#": command = "#assert"
         else: assertion = self._apply_commands(assertion)
 
         result = self._call_plugin(command, assertion)
+
+        result = self._wrap_literals_in_assert(result)
         return result
+
+    def extract_final_conclusions(self, tree):
+        
+        if type(tree) is not list: tree = [tree]
+
+        leafs = []
+
+        def _get_leaf_nodes(node):
+            if node is not None:
+                if "#conclusions" in node and node["#conclusions"] is not None:
+                    if len(node["#conclusions"]) == 0:
+                        new_node = copy.deepcopy(node)
+                        del new_node["#conclusions"]
+
+                        if "#assert" in new_node:
+                            if type(new_node["#assert"]) is not dict and type(new_node["#assert"]) is not list:
+                                new_node = new_node["#assert"]
+
+                        leafs.append(new_node)
+                    for n in node["#conclusions"]:
+                        _get_leaf_nodes(n)
+                else:
+                    new_node = copy.deepcopy(node)
+                    if "#conclusions" in new_node and new_node["#conclusions"] is None:
+                        del new_node["#conclusions"]
+                    leafs.append(new_node)
+
+        for tree_node in tree:
+            _get_leaf_nodes(tree_node)
+
+        return leafs
 
     # def _process_assertion(self, assertion):
         

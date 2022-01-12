@@ -4,15 +4,29 @@ import copy
 
 def process(command, context: ctx.Context):
     
+    # will collect result conclusions generated
     result = []
 
-    assertion = None
-    if "#assert" in command: assertion = command["#assert"]
-    else: assertion = command
+    # grab the assertion from the command, else the assertion is the command itself
+    assertion = command["#assert"] if "#assert" in command else command
+
+    # if no assertion then done
     if assertion is None: return None
-    
+
+    # if the assertion is a literal - just keep the original command
+    # this will preserve the sequence or other meta-information from the assertion
+    assertion = command if type(assertion) is not list and type(assertion) is not dict else assertion
+
+    # ensure sequence information is on the assertion
+    if "#seq-start" in command and "#seq-start" not in assertion:
+        assertion["#seq-start"] = command["#seq-start"]
+        assertion["#seq-end"] = command["#seq-end"]
+
+    # search and try to extend arcs
     sub_result = attempt_arcs(assertion, context)
     result = context.merge_into_list(result, sub_result)
+
+    # search and try to trigger rules
     sub_result = attempt_rulesets(assertion, context)
     result = context.merge_into_list(result, sub_result)
 
@@ -24,14 +38,23 @@ def attempt_arcs(assertion, context: ctx.Context):
    
     # run the agenda item against all arcs
     result = []
-    for arc in context.arcs:   
+    extended_arcs = []
+    for idx, arc in enumerate(context.arcs): 
         sub_result = attempt_rule(arc, assertion, context)
         result = context.merge_into_list(result, sub_result)
 
-    # remove arcs marked for removal (completed, non-positionally aware)
-    for arc in context.arcs:
-        if "#remove-me" in arc:
-            context.arcs.remove(arc)
+        # end non-sequential assertions after one match
+        # to prevent two matches returned in A B C -> MATCH for A B D A B C
+        if "#seq-start" not in assertion and sub_result is not None:
+            extended_arcs.append(arc)
+
+    for arc in extended_arcs:
+        context.arcs.remove(arc)
+
+    # # remove arcs marked for removal (completed, non-positionally aware)
+    # for arc in context.arcs:
+    #     if "#remove-me" in arc:
+    #         context.arcs.remove(arc)
 
     return result
 
@@ -119,48 +142,45 @@ def attempt_rule(rule, assertion, context: ctx.Context):
     when = rule["#when"] # get the "when" portion of the rule
     # self.log_message("EVAL:\t" + str(assertion) + " AGAINST " + str(rule))
 
-    # if the "when" portion is a list (sequence)
+    # if the "#when" portion is a list (sequence)
     if (type(when) is list):
+
+        # gather start and end information
+        assertion_start = assertion["#seq-start"] if "#seq-start" in assertion else None       
+        assertion_end = assertion["#seq-end"] if "#seq-end" in assertion else None
+        # if ("#seq-start" in rule): rule_start = rule["#seq-start"]   
+        rule_end = rule["#seq-end"] if "#seq-end" in rule else None 
 
         # arcs - test if arc position matches assertion's position
         # (ignore if no positional information)
-        assertion_start = None
-        assertion_end = None
-        rule_start = None
-        rule_end = None
-        if ("#seq-start" in assertion): assertion_start = assertion["#seq-start"]        
-        if ("#seq-end" in assertion): assertion_end = assertion["#seq-end"]
-        if ("#seq-start" in rule): rule_start = rule["#seq-start"]   
-        if ("#seq-end" in rule): rule_end = rule["#seq-end"]
-
-        if (rule_end is not None): 
-            if (assertion_start != rule_end): return
+        if rule_end is not None: 
+            if assertion_start != rule_end: return
 
         # find the current constituent
-        if ("#seq-idx" not in rule): rule["#seq-idx"] = 0
-        seq_idx = rule["#seq-idx"]      
-        candidate = when[seq_idx]
-        
+        seq_idx = rule["#seq-idx"] if "#seq-idx" in rule else 0
+        pattern_term = when[seq_idx]
+        assertion_term = assertion["#assert"] if "#assert" in assertion else assertion
+
         # attempt unification (sequences)
-        unification = thoughts.unification.unify(assertion, candidate)
+        unification = thoughts.unification.unify(assertion_term, pattern_term)
         
         if unification is None: return None
 
-        # next constituent in sequence unified
-        unification["?#when"] = copy.deepcopy(assertion)
-
-        # the constituent matched, extend the arc
         # self.log_message("MATCHED:\t" + str(assertion) + " AGAINST " + str(rule))
 
+        # next constituent in sequence unified
+        unification["?#when"] = copy.deepcopy(assertion)        
+        
         # clone the rule
         cloned_rule = copy.deepcopy(rule)
 
         # move to the next constituent in the arc                
-        seq_idx = seq_idx + 1
+        seq_idx += 1
         cloned_rule["#seq-idx"] = seq_idx
 
         # update the position information for the arc
-        if rule_start is None: cloned_rule["#seq-start"] = assertion_start
+        #if rule_start is None: cloned_rule["#seq-start"] = assertion_start
+        cloned_rule["#seq-start"] = assertion_start
         cloned_rule["#seq-end"] = assertion_end
 
         # merge unifications (variables found)
@@ -171,21 +191,21 @@ def attempt_rule(rule, assertion, context: ctx.Context):
             cloned_rule["#unification"] = {**current_unification, **unification}
 
         # check if arc completed
-        if (seq_idx == len(when)): # arc completed           
+        if seq_idx == len(when): # arc completed           
             unification = cloned_rule["#unification"]
             context.log_message("ARC-COMPLETE:\t" + str(cloned_rule))
             sub_result = process_then(cloned_rule, unification, context)
             context.merge_into_list(result, sub_result)
-            
+
         else: # arc did not complete - add to active arcs          
             context.log_message("ARC-EXTEND:\t" + str(cloned_rule))
             cloned_rule["#is-arc"] = True
             context.arcs.append(cloned_rule)
 
-        # if this is a non-positionally aware arc
-        # then signal to remove it - a full constituent was found
-        if rule_start is None and "#is-arc" in cloned_rule:
-            rule["#remove-me"] = True
+        # # if this is a non-positionally aware assertion
+        # # then signal to remove the arc - a new arc will take its place
+        # if "#seq-start" not in assertion and "#is-arc" in rule:
+        #     rule["#remove-me"] = True
 
     # else "when" part is not a non-sequential structure
     else:
@@ -223,6 +243,9 @@ def process_then(rule, unification, context: ctx.Context):
     # then = thoughts.unification.apply_unification(then, unification)
     then = context.apply_values(then, unification)
     # then = self.context.apply(then, unification)
+
+    if type(then) is str:
+        then = {"#assert": then}
 
     # add each item in the "then" portion to the agenda
     new_items = []
