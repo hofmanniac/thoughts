@@ -62,11 +62,14 @@ def unify(term1, term2):
             # ignore #seq (positional) information, as it is injected by the engine at runtime
             if (prop == "#seq-start"): continue
             if (prop == "#seq-end"): continue
+            if (prop == "#seq"): continue
+            if (prop == "#seq-idx"): continue
 
             # can still use #seq-start and #seq-end in rules, just need to escape them with an extra #
             prop1 = prop
             if (prop == "##seq-start"): prop1 = "#seq-start"
             if (prop == "##seq-end"): prop1 = "#seq-end"
+            if (prop == "##seq-idx"): prop1 = "#seq-idx"
 
             # a) Call Unify function with the ith element of Ψ1 and ith element of Ψ2, and put the result into S.
             if prop1 not in joTerm1: return None

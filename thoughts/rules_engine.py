@@ -67,10 +67,11 @@ class RulesEngine:
     def clear_context_variables(self):
         self.context.clear_variables()
    
-    def process(self, assertions, process_single=False, extract_conclusions = True):
+    def process(self, assertions, process_single=False, extract_conclusions = True, keep_arcs = False, include_seq = False):
+        if keep_arcs == False: self.clear_arcs()
         result = self._process(assertions, process_single)
         if extract_conclusions:
-            return self.extract_final_conclusions(result)
+            return self.extract_final_conclusions(result, include_seq)
         else:
             return result
 
@@ -248,7 +249,7 @@ class RulesEngine:
         result = self._wrap_literals_in_assert(result)
         return result
 
-    def extract_final_conclusions(self, tree):
+    def extract_final_conclusions(self, tree, include_seq = False):
         
         if type(tree) is not list: tree = [tree]
 
@@ -265,6 +266,11 @@ class RulesEngine:
                             if type(new_node["#assert"]) is not dict and type(new_node["#assert"]) is not list:
                                 new_node = new_node["#assert"]
 
+                        if include_seq == False and "#seq" in new_node: 
+                            del new_node["#seq"]
+                            del new_node["#seq-start"]
+                            del new_node["#seq-end"]
+
                         leafs.append(new_node)
                     for n in node["#conclusions"]:
                         _get_leaf_nodes(n)
@@ -272,8 +278,14 @@ class RulesEngine:
                     new_node = copy.deepcopy(node)
                     if "#conclusions" in new_node and new_node["#conclusions"] is None:
                         del new_node["#conclusions"]
+                        
+                    if include_seq == False and "#seq" in new_node: 
+                        del new_node["#seq"]
+                        del new_node["#seq-start"]
+                        del new_node["#seq-end"]
+                        
                     leafs.append(new_node)
-
+                
         for tree_node in tree:
             _get_leaf_nodes(tree_node)
 
@@ -434,4 +446,6 @@ class RulesEngine:
             if key == "#unification": continue
             if key == "#seq-start": continue
             if key == "#seq-end": continue
+            if key == "#seq": continue
+            if key == "#seq-idx": continue
             if key.startswith("#"): return key

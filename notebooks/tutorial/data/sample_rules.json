@@ -1,0 +1,8 @@
+[
+  {
+    "#when": "how old are you?",
+    "#then": "well now, that's a rather personal question, isn't it?"
+  },
+
+  { "#when": "no", "#then": "you seem rather negative about this" }
+]
