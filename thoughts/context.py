@@ -15,7 +15,7 @@ class Context:
 
     def __init__(self):
         self.default_ruleset = None
-        self.rulesets = []
+        self.rulesets = [{"name": "default", "rules": [], "path": None}]
         self.items = {}
         self.arcs = []
         self.log = []
@@ -138,7 +138,8 @@ class Context:
             self.index_rules(rules)
 
     def add_rule(self, rule):
-        self.default_ruleset["rules"].append(rule)
+        default_rule_set = self.rulesets[0]
+        default_rule_set["rules"].append(rule)
         self.update_index(rule)
 
     def clear_variables(self):

@@ -195,10 +195,12 @@ def attempt_rule(rule, assertion, context: ctx.Context):
                             return True
                 return False
 
-            # check if this assertion is in any other consituent in the arc
-            exists = constituent_exists(assertion, when)
-            if exists == True:
-                return
+            seq_allow_multi = rule["#seq-allow-multi"] if "#seq-allow-multi" in rule else False
+            if seq_allow_multi == False:
+                # check if this assertion is in any other consituent in the arc
+                exists = constituent_exists(assertion, when)
+                if exists == True:
+                    return
 
             # for constituent in when:
             #     con_start = constituent["#seq-start"] if "#seq-start" in constituent else None
