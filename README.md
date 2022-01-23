@@ -8,7 +8,7 @@ pip install thoughts
 
 Check out the notebooks folder for tutorials and ideas of what you can do with the engine.
 
-[Tutorials](https://github.com/hofmanniac/thoughts/tree/master/notebooks/tutorial)
+[Link to Tutorials](https://github.com/hofmanniac/thoughts/tree/master/notebooks/tutorial)
 
 ```python
 from thoughts.rules_engine import RulesEngine
