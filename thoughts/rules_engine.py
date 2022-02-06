@@ -37,7 +37,8 @@ class RulesEngine:
         """Clears all rules from the engine."""
 
         self.context.rulesets = []
-
+        self.context.rulesets.append({"name": "default", "rules": []})
+        
     # add a new rule manually
     def add_rule(self, rule):
         self.context.add_rule(rule)
