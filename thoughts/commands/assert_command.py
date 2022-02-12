@@ -358,7 +358,7 @@ def process_then(rule, unification, context: ctx.Context):
         
         new_item = copy.deepcopy(item)
 
-        if type(new_item) is str:
+        if type(new_item) is not dict and type(new_item) is not list:
             new_item = {"#assert": new_item}
 
         if (seq_start is not None) and (type(new_item) is dict): 

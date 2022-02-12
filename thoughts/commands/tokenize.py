@@ -24,7 +24,7 @@ def process(command, context: ctx.Context):
         else:
             new_fact = token
             
-        if type(new_fact) is str:
+        if type(new_fact) is not dict and type(new_fact) is not list:
             new_fact = {"#assert": new_fact}
 
         # add position information
