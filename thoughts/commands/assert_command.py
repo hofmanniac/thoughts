@@ -245,7 +245,8 @@ def attempt_rule(rule, assertion, context: ctx.Context):
         cloned_rule = copy.deepcopy(rule) # clone the rule
 
         # replace consituent with the one that matched
-        cloned_rule["#when"][seq_idx] = assertion_term
+        # cloned_rule["#when"][seq_idx] = assertion_term
+        cloned_rule["#when"][seq_idx] = assertion
 
         if seq_type != "set":  
             # move to the next constituent in the arc
@@ -343,9 +344,6 @@ def process_then(rule, unification, context: ctx.Context):
     then = context.apply_values(then, unification)
     # then = self.context.apply(then, unification)
 
-    if type(then) is str:
-        then = {"#assert": then}
-
     # add each item in the "then" portion to the agenda
     new_items = []
     if (type(then) is list): new_items = then
@@ -358,15 +356,20 @@ def process_then(rule, unification, context: ctx.Context):
         # revise - item = self._resolve_items(item)
         # item = self._resolve_items(item)
         
-        if (seq_start is not None) and (type(item) is dict): 
-            item["#seq-start"] = seq_start
+        new_item = copy.deepcopy(item)
 
-        if (seq_end is not None) and (type(item) is dict): 
-            item["#seq-end"] = seq_end
+        if type(new_item) is str:
+            new_item = {"#assert": new_item}
 
-        context.log_message("ADD:\t\t" + str(item) + " to the agenda")
+        if (seq_start is not None) and (type(new_item) is dict): 
+            new_item["#seq-start"] = seq_start
+
+        if (seq_end is not None) and (type(new_item) is dict): 
+            new_item["#seq-end"] = seq_end
+
+        context.log_message("ADD:\t\t" + str(new_item) + " to the agenda")
         # self._agenda.insert(i, item)
         # i = i + 1
-        result.append(item)
+        result.append(new_item)
     
     return result
