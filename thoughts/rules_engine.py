@@ -256,26 +256,31 @@ class RulesEngine:
 
         leafs = []
 
-        def _get_leaf_nodes(node):
+        def _get_leaf_nodes(node, level):
             if node is not None:
                 if "#conclusions" in node and node["#conclusions"] is not None:
-                    if len(node["#conclusions"]) == 0:
+                    if len(node["#conclusions"]) == 0 and level > 1:
+                    # if len(node["#conclusions"]) == 0:
+
                         new_node = copy.deepcopy(node)
                         del new_node["#conclusions"]
-
-                        if "#assert" in new_node:
-                            if type(new_node["#assert"]) is not dict and type(new_node["#assert"]) is not list:
-                                new_node = new_node["#assert"]
 
                         if include_seq == False and "#seq" in new_node: 
                             del new_node["#seq"]
                             del new_node["#seq-start"]
                             del new_node["#seq-end"]
-
+                    
+                        if include_seq == False and "#assert" in new_node:
+                            if type(new_node["#assert"]) is not dict and type(new_node["#assert"]) is not list:
+                                new_node = new_node["#assert"]
+                        
                         leafs.append(new_node)
+
                     for n in node["#conclusions"]:
-                        _get_leaf_nodes(n)
-                else:
+                        _get_leaf_nodes(n, level + 1)
+
+                elif level > 1:
+                # else:    
                     new_node = copy.deepcopy(node)
                     if "#conclusions" in new_node and new_node["#conclusions"] is None:
                         del new_node["#conclusions"]
@@ -287,8 +292,10 @@ class RulesEngine:
                         
                     leafs.append(new_node)
                 
+        level = 1
+
         for tree_node in tree:
-            _get_leaf_nodes(tree_node)
+            _get_leaf_nodes(tree_node, level)
 
         return leafs
 
