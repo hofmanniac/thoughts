@@ -1,9 +1,9 @@
 import json
 import os
-from build.lib import thoughts
-from build.lib.thoughts import context
+# from build.lib import thoughts
+# from build.lib.thoughts import context
 from thoughts.context import Context
-from thoughts.commands import tokenize
+# from thoughts.commands import tokenize
 
 # import thoughts.unification
 import copy

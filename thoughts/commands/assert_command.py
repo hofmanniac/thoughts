@@ -1,5 +1,5 @@
-from pickletools import anyobject
-from typing import Any
+# from pickletools import anyobject
+# from typing import Any
 from thoughts import context as ctx
 import thoughts.unification
 import copy
