@@ -14,5 +14,7 @@
 /test.py
 my_test.py
 /temp
-
+config.json
+__pycache__
 my_*.*
+memory
