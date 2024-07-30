@@ -1,0 +1,8 @@
+Current Scene:
+The player begins in the bustling port city of Aethervale, a hub for airship travel and trade.
+
+Scene Activities:
+- Visit various locations such as taverns, marketplaces, and the airship docks to gather rumors and clues about the captain's last known whereabouts.
+- Tavern: Engage in conversations with patrons and the bartender at the "Windward Sail" tavern.
+- Marketplace Inquiry: Speak to merchants and traders who might have seen the captain or heard stories about him.
+- Dockside Gossip: Talk to airship crews and dock workers for any leads.

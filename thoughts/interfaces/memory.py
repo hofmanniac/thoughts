@@ -11,8 +11,45 @@ from copy import deepcopy
 from chromadb.utils import embedding_functions
 import nltk
 
-from thoughts.interfaces.messaging import PromptMessage
+from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage
 
+class MemoryModule:
+
+    def __init__(self):
+        warnings.filterwarnings("ignore")
+        logging.basicConfig(level=logging.CRITICAL)
+        self.chroma_client = chromadb.PersistentClient(path="memory/chroma")
+        self.ef = embedding_functions.DefaultEmbeddingFunction()
+        self.messages = []
+
+    def add_memory(self, collection: str, item):
+        if type(item) is AIMessage or type(item) is HumanMessage or type(item) is PromptMessage:
+            message = item
+        elif type(item) is str:
+            message = HumanMessage(content=item)
+        message = self.add_embedding(message)
+        # message = interfaces.logger.save_message(message, collection_name)
+        collection = self.chroma_client.get_or_create_collection(collection)
+        self.add_message_to_collection(collection, message, include_document=True)
+
+    def add_embedding(self, message: PromptMessage):
+        if message.embedding is not None:
+            return message
+        text = message.content
+        embeddings = self.ef.embed_with_retries([text])
+        message.embedding= embeddings[0]
+        return message
+
+    def add_message_to_collection(self, collection: Collection, message: PromptMessage, include_document: bool = False):
+        embeddings = [message.embedding]
+        documents = None
+        if include_document:
+            documents = [message.content]
+        metadata = {"datetime": str(datetime.now())}
+        ids = [message.message_id]
+        collection.add(ids=ids, embeddings=embeddings, metadatas=[metadata], documents=documents)
+        return message
+       
 class Memory:
 
     def __init__(self):
@@ -123,6 +160,24 @@ class Memory:
 
         # return message, modified
         return message
+
+    # def persist_message(self, message: PromptMessage, collection_name: str):
+    #     file_name = message.message_id
+    #     message = self.save_log(message, collection_name, file_name + ".json")
+    #     return message
+    
+    # def save_log(self, message: dict, collection_name: str, log_name: str):
+    #     today_folder = get_todays_log_directory()
+    #     directory = "memory/" + collection_name + "/" + today_folder
+    #     if not os.path.exists(directory):
+    #         os.makedirs(directory)
+
+    #     filepath = directory + "/log-" + log_name
+    #     with open(filepath, "w") as f:
+    #         json.dump(message, f)
+
+    #     message["file"] = filepath
+    #     return message
 
 # class Memory:
 #     chat_history: list = None

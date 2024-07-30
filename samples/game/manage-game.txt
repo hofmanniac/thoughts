@@ -1,0 +1,1 @@
+In a single paragraph, describe what happens in the very next turn based on the player's action. Only describe the effects on the environment and NPCs, do not make up any decisions or actions on behalf of the player. Use the second person voice. Always end with asking what the player wants to do next.

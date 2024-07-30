@@ -72,10 +72,10 @@ def add_message(prompt, message):
 def load_template(prompt_name: str):
     config = Config()
     config_path = config.values["data-path"]
-    path = config_path + "/prompts/" + prompt_name + ".txt"
+    path = config_path + "/" + prompt_name + ".txt"
     with open(path, "r") as f:
-        prompt_lines = f.readlines()
-    prompt = {"content": prompt_lines, "messages": []}
+        prompt_lines = f.read()
+    prompt = {"content": prompt_lines}
     return prompt
 
 def load(prompt_name: str):

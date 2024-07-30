@@ -18,3 +18,4 @@ config.json
 __pycache__
 my_*.*
 memory
+samples/private
