@@ -197,6 +197,20 @@ def test_message_summarizer():
 
     print(results)
 
+def test_session_iterator():
+    from thoughts.engine import Context
+    from thoughts.operations.memory import SessionIterator
+    from thoughts.operations.memory import MessagesSummarizer
+
+    # context = Context(prompt_path="chat")
+    # summarizer = MessagesSummarizer("chat-summarize", 6, "chat-summary")
+
+    context = Context(prompt_path="extract-info")
+    # summarizer = MessagesSummarizer("extract-followups", 12, "extract-followups-12")
+    summarizer = MessagesSummarizer("extract-topics", 12, "extract-topics-12")
+    session_iter = SessionIterator([summarizer])
+    session_iter.execute(context)
+
 # test_llm()
 # test_graph_executor()
 # test_pipeline_executor()
@@ -204,9 +218,10 @@ def test_message_summarizer():
 # test_memory()
 # test_prompt_runner_simple()
 # test_prompt_runner_complex()
-test_chat_agent()
+# test_chat_agent()
 # test_chat_agent_loop()
 
 # test_logic_rules()
 # test_message_summarizer()
+test_session_iterator()
 

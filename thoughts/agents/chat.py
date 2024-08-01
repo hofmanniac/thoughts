@@ -1,4 +1,3 @@
-
 from thoughts.operations.core import Operation
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import MessagesSummarizer

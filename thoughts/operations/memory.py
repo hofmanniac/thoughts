@@ -75,9 +75,11 @@ class MessagesSummarizer(Operation):
             messages, loop = MessagesBatchAdder(
                 self.batch_size, exclude_ids=processed_ids, 
                 allow_partial_batch=self.allow_partial_batch).execute(context, messages)
-            
-            if loop == False:
+
+            if not messages or len(messages) == 0:
                 continue
+
+            # if loop = False, continue processing the last batch of messages (last time through)!
 
             messages, control = PromptStarter(
             role="human", prompt_name=self.prompt_name).execute(context, messages)
@@ -136,7 +138,7 @@ class SessionIterator(Operation):
         self.operations = operations
         self.num_previous = num_previous
 
-    def get_last_n_folders(self, directory, n):
+    def _get_last_n_folders(self, directory, n):
         # Get a list of all folders in the directory
         all_folders = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
 
@@ -159,10 +161,12 @@ class SessionIterator(Operation):
         return valid_folders[:n]
     
     def execute(self, context: Context, message = None):
-        folders = self.get_last_n_folders("memory/sessions", self.num_previous)
+        folders = self._get_last_n_folders("memory/sessions", self.num_previous)
         results = []
         for folder in folders:
             session_id = folder
+
+            print("Extracting", session_id, "...")
 
             # execution context is a mashup of the persisted session and the session passed in
             execution_context = Context(llm=context.llm, memory=context.memory, 
