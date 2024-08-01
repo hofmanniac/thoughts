@@ -1,4 +1,5 @@
 from thoughts.interfaces.messaging import HumanMessage
+from thoughts.operations.console import ConsoleWriter
 
 def test_llm():
 
@@ -112,20 +113,41 @@ def test_chat_agent():
     from thoughts.agents.chat import ChatAgent
     from thoughts.engine import Context
 
-    context = Context()
-    chat_agent = ChatAgent("pirate", "YOU:", 4)
+    context = Context(prompt_path="prompts", session_id="test-chat")
+    chat_agent = ChatAgent(context=context, prompt_name="pirate", user_prompt="YOU:", num_chat_history=4)
     chat_agent.execute(context)
     
+def test_chat_agent_loop():
+    from thoughts.agents.chat import ChatAgent
+    from thoughts.engine import Context
+    from thoughts.operations.console import ConsoleReader
+
+    context = Context(prompt_path="prompts", session_id="test-chat-loop")
+    chat_agent = ChatAgent(
+        context=context, prompt_name="pirate", user_prompt="YOU:", num_chat_history=4, handle_io=False)
+    reader = ConsoleReader("YOU:")
+    writer = ConsoleWriter()
+    
+    # bot initiates the chat
+    ai_message, control = chat_agent.execute(context)
+    writer.execute(context, ai_message)
+
+    # now loop!
+    while True:
+        message, control = reader.execute(context)
+        ai_message, control = chat_agent.execute(context, message)
+        writer.execute(context, ai_message)
+
 def test_logic_rules():
     from thoughts.operations.rules import RulesRunner
-    from thoughts.operations.rules import LogicRule, LogicCondition
+    from thoughts.operations.rules import LogicRule, Unifies
     from thoughts.operations.console import ConsoleWriter
     from thoughts.operations.rules import FactAsserter
     from thoughts.engine import Context
 
     rules_runner = RulesRunner()
 
-    condition = LogicCondition({"game-event": "start"})
+    condition = Unifies({"game-event": "start"})
     actions = [
         ConsoleWriter(text="You are standing in a scary woods at night."),
         ConsoleWriter(text="There are even scarier sounds coming from the north."),
@@ -134,7 +156,7 @@ def test_logic_rules():
     rule = LogicRule(condition, actions)
     rules_runner.add_rule(rule)
 
-    condition = LogicCondition({"input": "15"})
+    condition = Unifies({"input": "15"})
     actions = [
         ConsoleWriter(text="North?? OK...."),
         ConsoleWriter(text="You go north (a terrible choice, btw) and run into goblins."),
@@ -143,14 +165,14 @@ def test_logic_rules():
     rule = LogicRule(condition, actions)
     rules_runner.add_rule(rule)
 
-    condition = LogicCondition({"input": "Talk with ?person"})
+    condition = Unifies({"input": "Talk with ?person"})
     actions = [
         FactAsserter({"action": "talk", "subject": "?person"})
     ]
     rule = LogicRule(condition, actions)
     rules_runner.add_rule(rule)
 
-    condition = LogicCondition({"action": "talk", "subject": "?person"})
+    condition = Unifies({"action": "talk", "subject": "?person"})
     actions = [
         ConsoleWriter(text="You try talking with ?person. They do not seem amused.")
     ]
@@ -165,13 +187,26 @@ def test_logic_rules():
         text = input(": ")
         rules_runner.execute(context, message={"input": text})
 
+def test_message_summarizer():
+    from thoughts.engine import Context
+    from thoughts.operations.memory import MessagesSummarizer
+
+    context = Context(prompt_path="chat", session_id="2024-07-26")
+    summarizer = MessagesSummarizer("chat-summarize", 6, "chat-summary-6")
+    results = summarizer.execute(context)
+
+    print(results)
+
 # test_llm()
-test_graph_executor()
+# test_graph_executor()
 # test_pipeline_executor()
 # test_prompt_constructor()
 # test_memory()
 # test_prompt_runner_simple()
 # test_prompt_runner_complex()
-# test_chat_agent()
+test_chat_agent()
+# test_chat_agent_loop()
+
 # test_logic_rules()
+# test_message_summarizer()
 

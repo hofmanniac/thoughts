@@ -4,6 +4,4 @@ Format the follow up suggestions as a single bulleted list. Use simple sentences
 
 Example:
  - Ask about the concert that they attended
-
- Items:
  

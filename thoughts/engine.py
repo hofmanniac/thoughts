@@ -22,6 +22,7 @@ class Context:
         self.messages = []
         self.session_id = session_id if session_id is not None else str(uuid.uuid4())
         self.memory_module = MemoryModule()
+        self.logs = []
         
         session_path = "memory/sessions/" + self.session_id
         if os.path.exists(session_path):
@@ -164,6 +165,13 @@ class Context:
 
         self.messages = data
 
+    def format_value(self, value):
+        if isinstance(value, list):
+            return '\n'.join(str(item) for item in value)
+        elif isinstance(value, dict):
+            return ', '.join(f"{k}: {v}" for k, v in value.items())
+        return value
+
     def apply_values(self, term, provider):
             
         if (type(term) is dict):
@@ -209,6 +217,9 @@ class Context:
 
         else:
             return term
+
+    def log(self, text):
+        self.logs.append(text)
 
     def retrieve(self, text):
 
@@ -327,23 +338,23 @@ class PipelineExecutor:
         self.context = context if context is not None else Context()
         self.loop = loop
 
-    def execute(self, context=None, nodes=None):
+    def execute(self, context: Context = None, message = None):
 
         if context is not None:
             self.context = context
         
-        nodes_to_execute = nodes if nodes is not None else self.nodes
+        if self.nodes is None:
+            return None, None
         
-        if nodes_to_execute is None:
-            return None
-        
-        message = None
+        result = message
         idx = 0
+
+        results = []
 
         while True:
             
             # detect if done or need to loop back to the first node
-            if idx >= len(nodes_to_execute):
+            if idx >= len(self.nodes):
                 # # persist the context after each run
                 # self.context.persist()
                 if self.loop:
@@ -352,9 +363,11 @@ class PipelineExecutor:
                     break
             
             # run the next operation
-            current_node: Node = nodes_to_execute[idx]
+            current_node: Node = self.nodes[idx]
             if not current_node.condition or current_node.condition(self.context):
-                message, control = current_node.execute(self.context, message)
+                result, control = current_node.execute(self.context, result)
+                if result is not None:
+                    results.append(result)
                 if control is not None and control == False:
                     if self.loop:
                         idx = 0
@@ -366,3 +379,5 @@ class PipelineExecutor:
             idx += 1
 
             # could also persist after each operation runs - make an option?
+
+        return results, None

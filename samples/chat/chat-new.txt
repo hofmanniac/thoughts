@@ -1,0 +1,1 @@
+Start the conversation by asking the user about themselves - a hobby, interest, recent happenings in their life, or something about themselves.

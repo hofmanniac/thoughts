@@ -69,24 +69,29 @@ class LLM:
 
         return ai_message
     
-    def respond(self, prompt: dict, stream = False):
+    def respond(self, prompt, stream = False):
 
-        core_text = thoughts.interfaces.prompting.get_text(prompt)
+        if type(prompt) is dict:
 
-        if "context" in prompt:
-            context_text = "\n\nContext:"
-            for part in prompt["context"]:
-                part_text = "\n -".join(part["items"])
-                context_text += part_text
-            prompt_text = core_text + context_text
-        else:
-            prompt_text = core_text
+            core_text = thoughts.interfaces.prompting.get_text(prompt)
 
-        system_message = SystemMessage(content=prompt_text)
+            if "context" in prompt:
+                context_text = "\n\nContext:"
+                for part in prompt["context"]:
+                    part_text = "\n -".join(part["items"])
+                    context_text += part_text
+                prompt_text = core_text + context_text
+            else:
+                prompt_text = core_text
 
-        messages = [system_message]
-        chat_messages = prompt["messages"] if "messages" in prompt else []
-        messages.extend(chat_messages)
+            system_message = SystemMessage(content=prompt_text)
+
+            messages = [system_message]
+            chat_messages = prompt["messages"] if "messages" in prompt else []
+            messages.extend(chat_messages)
+            
+        elif type(prompt) is list:
+            messages = prompt
 
         response = self.invoke(messages, stream)
         return response
