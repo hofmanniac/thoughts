@@ -1,10 +1,8 @@
 from datetime import datetime
-import json
 import os
-from thoughts.engine import Context, PipelineExecutor
-from thoughts.interfaces.messaging import HumanMessage, PromptMessage
+from thoughts.engine import Context
 from thoughts.operations.core import Operation
-from thoughts.operations.prompting import MessagesBatchAdder, PromptAppender, PromptConstructor, PromptRunner, PromptStarter, StaticContentLoader, StaticPromptLoader
+from thoughts.operations.prompting import MessagesBatchAdder, PromptConstructor, PromptRunner, PromptStarter, StaticContentLoader, StaticPromptLoader
 
 class RAGContextAdder(Operation):
 
@@ -96,53 +94,6 @@ class MessagesSummarizer(Operation):
         result = {"content": summaries, "ids": list(processed_ids)}
         context.set_item(self.store_into, result)
         return result, None
-    
-    def execute2(self, context: Context, message = None):
-
-        # Load existing summaries and processed message indices if the file exists
-        data = context.get_item(self.store_into)
-        if data is None:
-            data = {"content": [], "ids": set()}
-        
-        summaries: list = data.get("content", [])
-        processed_ids: set = data.get("ids", set())
-
-        # Find the next batch of messages to process
-        new_messages = [(i, msg) for i, msg in enumerate(context.messages) if i not in processed_ids]
-        if not new_messages:
-            return None, None
-
-        if len(new_messages) < self.batch_size:
-            return None, None
-        
-        batches = [new_messages[i:i + self.batch_size] for i in range(0, len(new_messages), self.batch_size)]
-        for batch in batches:
-            
-            messages, control = PromptStarter(
-                content="You are a helpful AI assistant.").execute(context)
-            
-            indices, batch_messages = zip(*batch)
-            messages.extend(batch_messages)
-
-            messages, control = PromptStarter(
-                role="human", prompt_name=self.prompt_name).execute(context, messages)
-            
-            summary, control = PromptRunner(
-                stream=False, append_history=False).execute(context, messages)
-
-            summaries.append(summary)
-            processed_ids.update(indices)
-
-        # Save the updated summaries and processed indices to the JSON file
-        context.set_item(self.store_into, {"content": summaries, "ids": list(processed_ids)})
-
-        context.log(f"Processed {len(new_messages)} new messages in {len(batches)} batches.")
-
-    def execute_old(self, context: Context, message = None):
-        summary, control = self.summarizer.execute(context)
-        if summary is not None and self.store_into is not None:
-            context.append_item(self.store_into, summary.content)
-        return summary, None
 
 class InformationExtractor(Operation):
 

@@ -1,5 +1,4 @@
 
-from datetime import datetime
 from thoughts.operations.core import Operation
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import MessagesSummarizer
@@ -23,9 +22,6 @@ class ChatAgent(Operation):
 
         if context is None:
             context = self.context
-
-        # session_id = datetime.now().strftime("%Y-%m-%d")
-        # context = Context(prompt_path=self.prompt_path, session_id=session_id)
 
         reader = ConsoleReader(self.user_prompt)
         writer = ConsoleWriter()
