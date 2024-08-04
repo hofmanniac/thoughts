@@ -2,6 +2,7 @@ from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage
 from thoughts.operations.core import Operation
 import thoughts.interfaces.prompting
 from thoughts.engine import Context
+from thoughts.util import convert_to_list
 
 class DictFormatter(dict):
     def __missing__(self, key):
@@ -15,7 +16,7 @@ class DictFormatter(dict):
         return value
 
 class PromptStarter(Operation):
-    def __init__(self, role: str = "system", prompt_name: str = None, content: str = None):
+    def __init__(self, role: str = "system", prompt_name: str = None, content: str = "You are a helpful AI assistant."):
         self.condition = None
         self.role = role
         self.prompt_name = prompt_name
@@ -116,31 +117,36 @@ class MessagesBatchAdder(Operation):
 
 class ContextItemAppender(Operation):
     
-    def __init__(self, prompt_name: str, item_key: str):
+    def __init__(self, prompt_name: str = None, item_key: str = None, items = None):
         self.condition = None
         self.prompt_name = prompt_name
         self.item_key = item_key
+        self.items = items
 
     def execute(self, context: Context, messages = None):
-
         # get the info we need, or if not available then exit
         prompt_message: PromptMessage = messages[-1] if messages else None
-        item = context.get_item(self.item_key)
-        
-        if prompt_message is None or item is None:
+        if prompt_message is None:
             return messages, None
         
-        if "content" in item:
-            item = item["content"]
-            
         # load the static content
-        base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
-        prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
-        prompt_message.content += prompt["content"]
+        if self.prompt_name:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            prompt_message.content += prompt["content"]
         
-        # load the content item content
-        item_text = context.format_value(item)
-        prompt_message.content += item_text
+        item = None
+        if self.item_key is not None:
+            item = context.get_item(self.item_key)
+            if "content" in item:
+                item = item["content"]
+        elif self.items is not None:
+            item = self.items
+
+        if item is not None:
+            item_text = context.format_value(item)
+            # load the content item content
+            prompt_message.content += item_text
         
         # return the final
         return messages, None

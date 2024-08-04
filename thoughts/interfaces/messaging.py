@@ -226,9 +226,9 @@ class AIMessage(PromptMessage):
 
         # return cls(name=data['name'], age=data['age'])
         
-def create_message(speaker: str, text: str):
-    message_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-    return {"speaker": speaker, "text": text, "time": message_time}
+# def create_message(speaker: str, text: str):
+#     message_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+#     return {"speaker": speaker, "text": text, "time": message_time}
 
 def console_type(text: str, typing_speed: int = 0):
     if typing_speed == 0:

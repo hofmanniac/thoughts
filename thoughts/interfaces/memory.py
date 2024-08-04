@@ -10,8 +10,11 @@ import chromadb
 from copy import deepcopy
 from chromadb.utils import embedding_functions
 import nltk
-
 from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage
+
+class SemanticClusters:
+    def __init__(self):
+        pass
 
 class MemoryModule:
 

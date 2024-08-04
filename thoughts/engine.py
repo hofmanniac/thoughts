@@ -33,7 +33,7 @@ class Context:
         # run these after the load to override with the values passed in
         self.prompt_path = prompt_path
         self.persist_session = persist_session
-
+    
     def _object_hook(self, data):
         if '__class__' in data:
             class_name = data.pop('__class__')
