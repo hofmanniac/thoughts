@@ -1,3 +1,4 @@
+from colorama import Back, Fore, Style
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
@@ -8,10 +9,7 @@ from chromadb.utils import embedding_functions
 from thoughts.engine import Context
 import logging, warnings
 from typing import List
-
 from thoughts.operations.prompting import ContextItemAppender, PromptRunner, PromptStarter
-
-# from thoughts.interfaces.messaging import PromptMessage
 
 class Thought:
 
@@ -19,9 +17,10 @@ class Thought:
 
         self.content: str = content
         self.embedding = embedding
-        self.id = id if id else str(uuid.uuid4())
+        self.id: str = str(id) if id else str(uuid.uuid4())
         self.children: List[Thought] = []  # For runtime usage
         self.children_ids = children_ids if children_ids else []
+        self.metadata = {}
         # self.max_children = 4
 
     def add_child(self, child):
@@ -231,13 +230,100 @@ class SemanticMemoryTree:
         
         print("Reset.")
 
+class SemanticClusters:
 
-# Thought:
+    def __init__(self):
 
-    # def to_dict(self):
-    #     return {
-    #         "id": self.id,
-    #         "embedding": self.embedding.tolist(),
-    #         "content": self.content,
-    #         "children_ids": self.children_ids
-    #     }
+        self.collection_name = "clusters"
+        self.db_path = "memory/clusters"
+        self.clusters: List[Thought] = []
+        self.similarity_threshold = 0.8
+
+        warnings.filterwarnings("ignore")
+        logging.basicConfig(level=logging.CRITICAL)
+        self.chroma_client = chromadb.PersistentClient(path=self.db_path)
+        self.memories_db = self.chroma_client.get_or_create_collection(name="memories")
+        self.clusters_db = self.chroma_client.get_or_create_collection(name="clusters")
+        self.associations_db = self.chroma_client.get_or_create_collection(name="associations")
+        self.embedder = embedding_functions.DefaultEmbeddingFunction()
+
+    def add_cluster(self, cluster: Thought):
+        if cluster.embedding is None:
+            embeddings = self.embedder.embed_with_retries([cluster.content])
+            cluster.embedding = embeddings[0]
+    
+        cluster.metadata = {"is_cluster": True}
+        self.clusters.append(cluster)
+        self.persist_cluster(cluster)
+
+    def add_memory(self, memory: Thought):
+
+        print("Adding '", memory.content, "'...")
+              
+        if memory.embedding is None:
+            embeddings = self.embedder.embed_with_retries([memory.content])
+            memory.embedding = embeddings[0]
+        
+        self.persist_memory(memory)
+
+        clusters_matches = self.locate_clusters(memory)
+        for cluster_match in clusters_matches:
+            self.persist_association(memory, cluster_match["cluster"], cluster_match["similarity"])
+
+    def locate_clusters(self, memory: Thought) -> List[Thought]:
+        cluster_assignments = []
+        best_match: Thought = None
+        best_match_similarity = None
+        cluster: Thought
+        for cluster in self.clusters:
+            similarities = cosine_similarity([memory.embedding], [cluster.embedding])
+            closest_similarity = max(similarities)[0]
+
+            # Add any additional logic here
+            if closest_similarity >  self.similarity_threshold:
+                print(f'{Fore.GREEN} - Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
+                cluster_assignments.append({"cluster": cluster, "similarity": closest_similarity})
+            else:
+                # print(f'{Fore.RED} - Not Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
+                pass
+
+            if best_match_similarity is None:
+                best_match_similarity = closest_similarity
+                best_match = cluster
+            else:
+                if closest_similarity > best_match_similarity:
+                    best_match_similarity = closest_similarity
+                    best_match = cluster
+
+        if len(cluster_assignments) == 0:
+            if best_match_similarity > 0: # negative is diametrically opposite, zero orthogonal
+                print(f'{Fore.GREEN} - Best Match:\t {best_match.content[0:40]} {best_match_similarity}{Style.RESET_ALL}')
+                cluster_assignments.append({"cluster": best_match, "similarity": best_match_similarity})
+            else:
+                print(f' - Matches: {Fore.RED} No Match{Style.RESET_ALL}')
+
+        return cluster_assignments
+
+    def persist_memory(self, memory: Thought):
+        if not memory.metadata:
+            self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content])
+        else:
+            self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
+
+    def persist_cluster(self, memory: Thought):
+        self.clusters_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
+
+    def persist_association(self, memory: Thought, cluster: Thought, similarity):
+        assocation = {"memory-id": memory.id, "cluster-id": cluster.id, "similarity": similarity}
+        self.associations_db.upsert(
+            ids=[str(uuid.uuid4())], documents=["memory-cluster"], metadatas=[assocation])
+
+    def reset(self):
+        for collection in self.chroma_client.list_collections():
+            self.chroma_client.delete_collection(collection.name)
+    
+        # self.collection = self.chroma_client.get_or_create_collection(name=self.collection_name)
+        # self.root = Thought(content="", id="0")
+        # self.persist_memory(self.root)
+        
+        print("Reset.")
