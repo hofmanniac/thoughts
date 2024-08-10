@@ -330,19 +330,72 @@ def test_semantic_clusters():
     with open(data_file, "r") as f:
         test_data = json.load(f)
     
-    clusters = SemanticClusters()
+    context = Context(session_id="semantic-clusters")
+    cluster_memory = SemanticClusters(context=context, hierarchical=True)
 
     idx = 1
     for sentence in test_data["clusters"]:
         message = Thought(sentence, id=str(idx))
-        clusters.add_cluster(message)
+        cluster_memory.add_cluster(message)
         idx += 1
 
     for sentence in test_data["items"]:
         message = Thought(sentence, id=str(idx))
-        clusters.add_memory(message)
+        cluster_memory.add_memory(message)
         idx += 1
+
+    result = cluster_memory.get_memory_summary()
+    session_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    with open("memory/outputs/semantic-clusters-" + session_id + ".json", "w") as f:
+        json.dump(result, f)
     
+def test_semantic_clusters_personal():
+    from thoughts.engine import Context
+    from thoughts.interfaces.semantic import SemanticClusters
+    from thoughts.interfaces.semantic import Thought
+
+    # Function to recursively add sub-items as children
+    def add_children_recursively(data, parent: Thought):
+        for idx, topic in enumerate(data):
+            memory = Thought(topic["topic"] + ": " + topic["content"], id=parent.id + '.' + str(idx), is_cluster=True)
+            semantic_memory.verify_embedding(memory)
+            parent.add_child(memory)
+            if "items" in topic:
+                add_children_recursively(topic["items"], memory)
+
+    # Function to add top-level topics and their children
+    def add_topics(data, semantic_memory: SemanticClusters):
+        for idx, topic in enumerate(data):
+            memory = Thought(topic["topic"] + ": " + topic["content"], id=str(idx))
+            if "items" in topic:
+                add_children_recursively(topic["items"], memory)
+            semantic_memory.add_cluster(memory)
+
+    # data_file = "samples/data/personal.json"
+    data_file = "samples/data/personal-main.json"
+    with open(data_file, "r") as f:
+        test_data = json.load(f)
+    
+    context = Context(session_id="semantic-clusters")
+    semantic_memory = SemanticClusters(context=context, recluster=False, hierarchical=False)
+
+    # Add top-level topics and their children to the semantic memory system
+    add_topics(test_data, semantic_memory)
+
+    with open("samples/data/personal-sentences.json", "r") as f:
+        test_data = json.load(f)
+
+    idx = 1000
+    for sentence in test_data:
+        message = Thought(sentence, id=str(idx))
+        semantic_memory.add_memory(message)
+        idx += 1
+
+    result = semantic_memory.get_memory_summary()
+    session_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    with open("memory/outputs/semantic-clusters-" + session_id + ".json", "w") as f:
+        json.dump(result, f)
+
 # test_llm()
 # test_graph_executor()
 # test_pipeline_executor()
@@ -359,5 +412,5 @@ def test_semantic_clusters():
 # test_normalize_list()
 # test_semantic_memory()
 # test_semantic_tree()
-
 test_semantic_clusters()
+# test_semantic_clusters_personal()

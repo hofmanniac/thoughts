@@ -1,0 +1,363 @@
+[
+    {
+      "topic": "Personal Information",
+      "content": "Personal information about the user",
+      "items": [
+        {
+          "topic": "Identity",
+          "content": "Information about the person's identity",
+          "items": [
+            {
+              "topic": "Name and Nicknames",
+              "content": "Information about the individual's name, any nicknames they go by"
+            },
+            {
+              "topic": "Birthdate and Birthplace",
+              "content": "Details about the individual's birthdate and where they were born"
+            },
+            {
+              "topic": "Family Members",
+              "content": "Information about immediate family members and their relationships"
+            }
+          ]
+        },
+        {
+          "topic": "Preferences",
+          "content": "Information about the individual's likes and dislikes",
+          "items": [
+            {
+              "topic": "Food and Drink",
+              "content": "Favorite foods, beverages, dietary restrictions"
+            },
+            {
+              "topic": "Hobbies and Interests",
+              "content": "Activities and hobbies the individual enjoys"
+            },
+            {
+              "topic": "Favorite Entertainment",
+              "content": "Preferred books, movies, music, and other forms of entertainment"
+            }
+          ]
+        },
+        {
+          "topic": "Health and Fitness",
+          "content": "Information about the individual's health and fitness routines",
+          "items": [
+            {
+              "topic": "Medical History",
+              "content": "Information about past and current medical conditions"
+            },
+            {
+              "topic": "Exercise Routines",
+              "content": "Regular workout schedules and preferred types of exercise"
+            },
+            {
+              "topic": "Dietary Habits",
+              "content": "Daily dietary patterns and any special diet followed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Professional Life",
+      "content": "Information about the user's professional life",
+      "items": [
+        {
+          "topic": "Job and Career",
+          "content": "Information about the individual's job and career",
+          "items": [
+            {
+              "topic": "Current Job",
+              "content": "Role, responsibilities, and company"
+            },
+            {
+              "topic": "Past Jobs",
+              "content": "Previous positions held and companies worked for"
+            },
+            {
+              "topic": "Career Goals",
+              "content": "Short-term and long-term professional objectives"
+            }
+          ]
+        },
+        {
+          "topic": "Skills and Education",
+          "content": "Information about the individual's skills and education",
+          "items": [
+            {
+              "topic": "Educational Background",
+              "content": "Schools attended, degrees obtained"
+            },
+            {
+              "topic": "Professional Skills",
+              "content": "Key skills relevant to the individual's career"
+            },
+            {
+              "topic": "Certifications and Training",
+              "content": "Any additional qualifications or courses completed"
+            }
+          ]
+        },
+        {
+          "topic": "Work Projects",
+          "content": "Information about the individual's work projects",
+          "items": [
+            {
+              "topic": "Current Projects",
+              "content": "Active projects and their status"
+            },
+            {
+              "topic": "Past Projects",
+              "content": "Completed projects and their outcomes"
+            },
+            {
+              "topic": "Future Projects",
+              "content": "Planned or upcoming projects"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Social Relationships",
+      "content": "Information about the user's social relationships",
+      "items": [
+        {
+          "topic": "Friends and Acquaintances",
+          "content": "Information about the individual's friends and acquaintances",
+          "items": [
+            {
+              "topic": "Close Friends",
+              "content": "Information about close friends and their relationships"
+            },
+            {
+              "topic": "Colleues",
+              "content": "Professional connections and relationships at work"
+            },
+            {
+              "topic": "Social Circles",
+              "content": "Various social groups the individual is part of"
+            }
+          ]
+        },
+        {
+          "topic": "Communication",
+          "content": "Information about the individual's communication methods",
+          "items": [
+            {
+              "topic": "Contact Information",
+              "content": "Phone numbers, email addresses, social media handles"
+            },
+            {
+              "topic": "Meeting Schedules",
+              "content": "Regularly scheduled meetings and calls"
+            },
+            {
+              "topic": "Messaging Patterns",
+              "content": "Preferred methods and times for communication"
+            }
+          ]
+        },
+        {
+          "topic": "Events and Activities",
+          "content": "Information about the individual's events and activities",
+          "items": [
+            {
+              "topic": "Social Events",
+              "content": "Parties, gatherings, and other social events attended"
+            },
+            {
+              "topic": "Professional Events",
+              "content": "Conferences, seminars, and other work-related events"
+            },
+            {
+              "topic": "Personal Milestones",
+              "content": "Significant personal events like birthdays and anniversaries"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Daily Life",
+      "content": "Information about the user's daily life",
+      "items": [
+        {
+          "topic": "Routine",
+          "content": "Details about the individual's daily, weekly, and monthly routines",
+          "items": [
+            {
+              "topic": "Daily Schedule",
+              "content": "Regular daily activities and their timings"
+            },
+            {
+              "topic": "Weekly Routine",
+              "content": "Activities scheduled on specific days of the week"
+            },
+            {
+              "topic": "Monthly and Yearly Routine",
+              "content": "Monthly and annual events and activities"
+            }
+          ]
+        },
+        {
+          "topic": "Tasks and To-Dos",
+          "content": "Information about the individual's tasks and to-do lists",
+          "items": [
+            {
+              "topic": "Current Tasks",
+              "content": "Tasks that are currently active or pending"
+            },
+            {
+              "topic": "Completed Tasks",
+              "content": "Tasks that have been completed"
+            },
+            {
+              "topic": "Future Tasks",
+              "content": "Tasks that are planned for the future"
+            }
+          ]
+        },
+        {
+          "topic": "Personal Development",
+          "content": "Information about the individual's personal development",
+          "items": [
+            {
+              "topic": "Learning Goals",
+              "content": "Skills or knowledge the individual wants to acquire"
+            },
+            {
+              "topic": "Self-Improvement Plans",
+              "content": "Plans for personal growth and development"
+            },
+            {
+              "topic": "Health Goals",
+              "content": "Targets related to physical and mental well-being"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Interests and Activities",
+      "content": "Information about the user's interests and activities",
+      "items": [
+        {
+          "topic": "Entertainment",
+          "content": "Information about the individual's entertainment preferences",
+          "items": [
+            {
+              "topic": "Books and Literature",
+              "content": "Favorite books, authors, genres"
+            },
+            {
+              "topic": "Movies and TV Shows",
+              "content": "Preferred movies, series, genres"
+            },
+            {
+              "topic": "Music and Art",
+              "content": "Favorite music, artists, genres, art forms"
+            }
+          ]
+        },
+        {
+          "topic": "Hobbies",
+          "content": "Information about the individual's hobbies",
+          "items": [
+            {
+              "topic": "Sports and Games",
+              "content": "Favorite sports, games, and recreational activities"
+            },
+            {
+              "topic": "Creative Hobbies",
+              "content": "Arts, crafts, writing, and other creative pursuits"
+            },
+            {
+              "topic": "Outdoor Activities",
+              "content": "Hiking, camping, traveling, and other outdoor activities"
+            }
+          ]
+        },
+        {
+          "topic": "Technology",
+          "content": "Information about the individual's technology preferences",
+          "items": [
+            {
+              "topic": "Gadgets and Devices",
+              "content": "Preferred gadgets, devices, and their uses"
+            },
+            {
+              "topic": "Software and Apps",
+              "content": "Frequently used software applications and their purposes"
+            },
+            {
+              "topic": "Tech Trends",
+              "content": "Interests in emerging technologies and trends"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Financial Information",
+      "content": "Information about the user's financial details",
+      "items": [
+        {
+          "topic": "Income",
+          "content": "Information about the individual's income sources",
+          "items": [
+            {
+              "topic": "Salary and Wages",
+              "content": "Information about regular income sources"
+            },
+            {
+              "topic": "Investments",
+              "content": "Details about stocks, bonds, and other investments"
+            },
+            {
+              "topic": "Side Income",
+              "content": "Additional sources of income, such as freelancing or part-time work"
+            }
+          ]
+        },
+        {
+          "topic": "Expenses",
+          "content": "Information about the individual's expenses",
+          "items": [
+            {
+              "topic": "Monthly Expenses",
+              "content": "Regular monthly expenditures"
+            },
+            {
+              "topic": "Major Purchases",
+              "content": "Significant purchases made or planned"
+            },
+            {
+              "topic": "Bills and Subscriptions",
+              "content": "Regular bills and subscription services"
+            }
+          ]
+        },
+        {
+          "topic": "Savings and Goals",
+          "content": "Information about the individual's savings and financial goals",
+          "items": [
+            {
+              "topic": "Savings Accounts",
+              "content": "Details about savings accounts and balances"
+            },
+            {
+              "topic": "Financial Goals",
+              "content": "Short-term and long-term financial objectives"
+            },
+            {
+              "topic": "Retirement Plans",
+              "content": "Plans and preparations for retirement"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+  

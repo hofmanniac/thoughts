@@ -6,14 +6,19 @@ import uuid
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
-from thoughts.engine import Context
+from thoughts.engine import Context, PipelineExecutor
 import logging, warnings
 from typing import List
-from thoughts.operations.prompting import ContextItemAppender, PromptRunner, PromptStarter
+from thoughts.operations.prompting import ContextItemAppender, PromptAppender, PromptRunner, PromptStarter
+import spacy
+from spacy.cli import download
+from spacy.util import is_package
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 class Thought:
 
-    def __init__(self, content: str, embedding = None, id=None, children_ids=None):
+    def __init__(self, content: str, embedding = None, id=None, children_ids=None, is_cluster = False):
 
         self.content: str = content
         self.embedding = embedding
@@ -21,6 +26,7 @@ class Thought:
         self.children: List[Thought] = []  # For runtime usage
         self.children_ids = children_ids if children_ids else []
         self.metadata = {}
+        self.is_cluster = is_cluster
         # self.max_children = 4
 
     def add_child(self, child):
@@ -175,7 +181,6 @@ class SemanticMemoryTree:
         # node.update_summary()
         self.save_memory(node)
 
-   
     def save_memory(self, memory: Thought):
 
         if memory.embedding is None:
@@ -232,12 +237,23 @@ class SemanticMemoryTree:
 
 class SemanticClusters:
 
-    def __init__(self):
+    def __init__(self, context: Context, recluster: bool = True, hierarchical = False):
 
+        self.context = context
         self.collection_name = "clusters"
         self.db_path = "memory/clusters"
         self.clusters: List[Thought] = []
-        self.similarity_threshold = 0.8
+        self.similarity_threshold = 0.5 #0.8
+        self.max_cluster_size = 6 #10 #4
+        self.scaling_factor = 10
+        self.recluster = recluster
+        self.hierarchical = hierarchical
+
+        # Load the spaCy model
+        model_name = "en_core_web_sm"
+        if not is_package(model_name):
+            download(model_name)
+        self.nlp = spacy.load(model_name)
 
         warnings.filterwarnings("ignore")
         logging.basicConfig(level=logging.CRITICAL)
@@ -247,45 +263,261 @@ class SemanticClusters:
         self.associations_db = self.chroma_client.get_or_create_collection(name="associations")
         self.embedder = embedding_functions.DefaultEmbeddingFunction()
 
+    def trace(self, *args):
+        # Convert all arguments to string and join them with a space
+        message = ' '.join(map(str, args))
+        print(message)
+
+
+    def verify_embedding(self, thought: Thought):
+        if thought.embedding is None:
+            embeddings = self.embedder.embed_with_retries([thought.content])
+            thought.embedding = embeddings[0]
+
     def add_cluster(self, cluster: Thought):
-        if cluster.embedding is None:
-            embeddings = self.embedder.embed_with_retries([cluster.content])
-            cluster.embedding = embeddings[0]
+
+        self.trace("ADD CLUSTER:", cluster.content)
+
+        self.verify_embedding(cluster)
     
+        cluster.is_cluster = True
         cluster.metadata = {"is_cluster": True}
         self.clusters.append(cluster)
         self.persist_cluster(cluster)
 
+    def associate(self, cluster: Thought, memory: Thought, similarity):
+        cluster.add_child(memory)
+        self.persist_association(memory, cluster, similarity)
+
     def add_memory(self, memory: Thought):
 
-        print("Adding '", memory.content, "'...")
+        self.trace("ADD MEMORY: ", memory.content)
               
-        if memory.embedding is None:
-            embeddings = self.embedder.embed_with_retries([memory.content])
-            memory.embedding = embeddings[0]
-        
+        self.verify_embedding(memory)
         self.persist_memory(memory)
 
-        clusters_matches = self.locate_clusters(memory)
+        clusters_matches = self.match_to_clusters(memory, self.clusters)
         for cluster_match in clusters_matches:
-            self.persist_association(memory, cluster_match["cluster"], cluster_match["similarity"])
+            cluster: Thought = cluster_match["cluster"]
+            similarity = cluster_match["similarity"]
+            self.associate(cluster, memory, similarity)
+            self.adjust_cluster(cluster)
+            
+    def adjust_cluster(self, cluster: Thought):
+        if self.recluster == False:
+            return
+        clusters, embeddings = self.analyze_cluster(cluster)
+        self.split_cluster(cluster, clusters, embeddings)
+        
+    def analyze_clusters(self):
+        for cluster in self.clusters:
+            self.analyze_cluster(cluster)
 
-    def locate_clusters(self, memory: Thought) -> List[Thought]:
+    # def analyze_cluster(self, node: Thought):
+    #     if len(node.children) <= self.max_cluster_size:
+    #         return None, None
+        
+    #     embeddings = [child.embedding for child in node.children]
+    #     num_clusters = max(2, len(embeddings) // self.scaling_factor)
+    #     kmeans = KMeans(n_clusters=num_clusters)
+    #     new_clusters = kmeans.fit_predict(embeddings)
+
+    #     return new_clusters, embeddings
+
+    def analyze_cluster(self, node: Thought):
+        if len(node.children) <= self.max_cluster_size:
+            return None, None
+
+        embeddings = [child.embedding for child in node.children]
+        
+        # Apply PCA to reduce the dimensionality
+        n_components = min(len(embeddings), 50)
+        pca = PCA(n_components=min(len(embeddings[0]), n_components))  # Keep 50 components or less if original dimensionality is lower
+        reduced_embeddings = pca.fit_transform(embeddings)
+        
+        # Determine the number of clusters
+        num_clusters = max(2, len(embeddings) // self.scaling_factor)
+        
+        # Perform KMeans clustering on the reduced embeddings
+        kmeans = KMeans(n_clusters=num_clusters)
+        new_clusters = kmeans.fit_predict(reduced_embeddings)
+
+        # return new_clusters, reduced_embeddings
+        return new_clusters, embeddings
+    
+
+    def split_cluster(self, cluster: Thought, new_clusters, embeddings):
+        if new_clusters is None:
+            return
+        
+        unique_clusters = list(set(new_clusters))
+
+        new_children = {}
+        for i in unique_clusters:
+        # for i in set(new_clusters):
+            # Get the indices of the children in the current cluster
+            # cluster_indices = [j for j in range(len(embeddings)) if unique_clusters[j] == i]
+            cluster_indices = [j for j in range(len(embeddings)) if new_clusters[j] == i]
+
+            # Concatenate the content of the children in the current cluster
+            cluster_contents = [cluster.children[j].content for j in cluster_indices]
+            # combined_content = "; ".join(cluster_contents)
+
+            # summarize the contents, using another set for comparison
+            # control_idx = (i + 1) % len(unique_clusters)
+            # control_indices = [j for j in range(len(embeddings)) if new_clusters[j] == control_idx]
+            # control_contents = [node.children[j].content for j in control_indices]
+            # control_content = "; ".join(control_contents)
+            # cluster_summary = self._summarize_contents(cluster_contents, control_contents)
+
+            ners = self.extract_topics_and_entities(cluster_contents)
+            cluster_summary = ", ".join(ners)
+            
+            # Calculate the mean embedding for the current cluster
+            cluster_embeddings = [embeddings[j] for j in cluster_indices]
+            mean_embedding = np.mean(cluster_embeddings, axis=0)
+
+            # calculate new embedding based on the named entity recognition
+            # mean_embeddings = self.embedder.embed_with_retries([cluster_summary])
+            # mean_embedding = mean_embeddings[0]
+
+            # Create a new child node for the current cluster
+            new_child = Thought(embedding=mean_embedding, content=cluster_summary, is_cluster=True)
+
+            # Add the new child node to the dictionary
+            new_children[i] = new_child
+            print("Addding cluster", new_child.id, "Content:", new_child.content)
+
+        if self.hierarchical:
+            # Step 6: Add original children to their respective new cluster nodes
+            for i, child in enumerate(cluster.children):
+                cluster_id = new_clusters[i]
+                new_children[cluster_id].add_child(child)
+                print(f"Added {child.id} to {new_children[cluster_id].id}")
+
+            # Step 7: Update the children of the current node
+            new_children_list = new_children.values()
+            cluster.children = list(new_children_list)
+            print("Split", cluster.id, ", New Children:", ", ".join([x.id for x in cluster.children]))
+            # Step 8: Update summaries and save the new children nodes
+            # for new_child in node.children:
+            #     new_child.update_summary()
+            #     self.save_memory(new_child)
+        else:
+            self.clusters.remove(cluster)
+            new_child: Thought
+            for new_child in new_children.values():
+                self.add_cluster(new_child)
+
+        # Step 9: Update the summary of the current node and save it
+        # node.update_summary()
+        # self.persist_cluster(node)
+
+    def extract_topics_and_entities(self, texts):
+        topics_and_entities = set()
+        for doc_text in texts:
+            doc = self.nlp(doc_text)
+            for entity in doc.ents:
+                topics_and_entities.add(entity.text)
+        return topics_and_entities
+
+    def _summarize_contents(self, set_one: list, set_two: list):
+        # return "; ".join(contents)
+
+        instructions = "Why would an item appear in Set One and not Set Two? What makes Set One different from Set Two?\n\n"
+
+        # messages = PipelineExecutor([
+        #     PromptStarter(),
+        #     PromptStarter("human", content=instructions),
+        #     ContextItemAppender(items=set_one, title="Set One"),
+        #     ContextItemAppender(items=set_two, title="Set Two"),
+        #     PromptRunner(append_history=False)
+        # ], self.context).execute()
+        # result = messages[0].content
+
+        messages, control = PromptStarter().execute(self.context)
+        messages, control = PromptStarter("human", content=instructions).execute(self.context, messages)
+        messages, control = ContextItemAppender(items=set_one, title="Set One").execute(self.context, messages)
+        messages, control = ContextItemAppender(items=set_two, title="Set Two").execute(self.context, messages)
+        message, control = PromptRunner(append_history=False).execute(self.context, messages)
+        result = message.content
+
+        messages, control = PromptStarter().execute(self.context)
+        messages, control = PromptStarter("human", content="Write a paragraph summarizing what Set One from the description below is about. Only describe what it does include. Begin with the phrase 'Set One is about'. Do not mention 'Set Two'. \n\n" + result).execute(self.context, messages)
+        message, control = PromptRunner(append_history=False).execute(self.context, messages)
+        result = message.content
+
+        result = str.replace(result, "Set One", "this item")
+        result = str.replace(result, "Set Two", "other items")
+        result = str.capitalize(result[0]) + result[1:]
+        return result
+    
+    # def _summarize_contents(self, set_one: list, set_two: list):
+    #     # return "; ".join(contents)
+
+    #     instructions = "Why would an item appear in Set One and not Set Two? What makes Set One different from Set Two?\n\n"
+
+    #     messages, control = PromptStarter().execute(self.context)
+    #     messages, control = PromptStarter("human", content=instructions).execute(self.context, messages)
+    #     messages, control = ContextItemAppender(items=set_one, title="Set One").execute(self.context, messages)
+    #     messages, control = ContextItemAppender(items=set_two, title="Set Two").execute(self.context, messages)
+    #     message, control = PromptRunner(append_history=False).execute(self.context, messages)
+    #     result = message.content
+
+    #     messages, control = PromptStarter().execute(self.context)
+    #     messages, control = PromptStarter("human", content="Write a paragraph summarizing what Set One from the description below is about. Only describe what it does include. Begin with the phrase 'Set One is about'. Do not mention 'Set Two'. \n\n" + result).execute(self.context, messages)
+    #     message, control = PromptRunner(append_history=False).execute(self.context, messages)
+    #     result = message.content
+
+    #     result = str.replace(result, "Set One", "this item")
+    #     result = str.replace(result, "Set Two", "other items")
+    #     result = str.capitalize(result[0]) + result[1:]
+    #     return result
+    
+    def match_to_cluster(self, memory: Thought, cluster: Thought):
+        results = []
+        similarities = cosine_similarity([memory.embedding], [cluster.embedding])
+        closest_similarity = max(similarities)[0]
+
+        # Add any additional logic here
+        if closest_similarity > self.similarity_threshold:
+
+            best_cluster = cluster
+            best_similarity = closest_similarity
+
+            if self.hierarchical:
+                child_matches = self.match_to_clusters(memory, cluster.children)
+                if len(child_matches) > 0:
+                    best_child_match = max(child_matches, key=lambda x: x["similarity"])
+                    best_child_cluster = best_child_match["cluster"]
+                    best_child_similarity = best_child_match["similarity"]
+                    if best_child_similarity > best_similarity:
+                        best_cluster = best_child_cluster
+                        best_similarity = best_child_similarity
+
+            results.append({"cluster": best_cluster, "similarity": best_similarity})
+        else:
+            # print(f'{Fore.RED} - Not Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
+            pass
+
+        return results, closest_similarity
+
+    def match_to_clusters(self, memory: Thought, clusters: List[Thought]) -> List[Thought]:
+        if len(clusters) == 0:
+            return []
+        
         cluster_assignments = []
         best_match: Thought = None
         best_match_similarity = None
+        
         cluster: Thought
-        for cluster in self.clusters:
-            similarities = cosine_similarity([memory.embedding], [cluster.embedding])
-            closest_similarity = max(similarities)[0]
+        for cluster in clusters:
 
-            # Add any additional logic here
-            if closest_similarity >  self.similarity_threshold:
-                print(f'{Fore.GREEN} - Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
-                cluster_assignments.append({"cluster": cluster, "similarity": closest_similarity})
-            else:
-                # print(f'{Fore.RED} - Not Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
-                pass
+            if cluster.is_cluster == False:
+                continue
+
+            cluster_matches, closest_similarity = self.match_to_cluster(memory, cluster)
+            cluster_assignments.extend(cluster_matches)
 
             if best_match_similarity is None:
                 best_match_similarity = closest_similarity
@@ -296,27 +528,55 @@ class SemanticClusters:
                     best_match = cluster
 
         if len(cluster_assignments) == 0:
-            if best_match_similarity > 0: # negative is diametrically opposite, zero orthogonal
-                print(f'{Fore.GREEN} - Best Match:\t {best_match.content[0:40]} {best_match_similarity}{Style.RESET_ALL}')
-                cluster_assignments.append({"cluster": best_match, "similarity": best_match_similarity})
+
+            if best_match_similarity and best_match_similarity > 0: # negative is diametrically opposite, zero orthogonal
+
+                best_cluster = best_match
+                best_similarity = closest_similarity
+
+                if self.hierarchical:
+                    child_matches = self.match_to_clusters(memory, best_cluster.children)
+                    if len(child_matches) > 0:
+                        best_child_match = max(child_matches, key=lambda x: x["similarity"])
+                        best_child_cluster = best_child_match["cluster"]
+                        best_child_similarity = best_child_match["similarity"]
+                        if best_child_similarity > best_similarity:
+                            best_cluster = best_child_cluster
+                            best_similarity = best_child_similarity
+                        
+                cluster_assignments.append({"cluster": best_cluster, "similarity": best_similarity})
+                # print(f'{Fore.GREEN} - Best Match:\t {best_match.content[0:40]} {best_match_similarity}{Style.RESET_ALL}')
+                # cluster_assignments.append({"cluster": best_match, "similarity": best_match_similarity})
+
+                # child_matches = self.match_to_clusters(memory, best_match.children)
+                # if len(child_matches) > 0 and closest_child_similarity > best_match_similarity:
+                #     best_child_match = max(child_matches, key=lambda x: x["similarity"])
+                #     cluster_assignments.append({"cluster": best_child_match, "similarity": closest_child_similarity})
+                # else:
+                #     print(f'{Fore.GREEN} - Matched:\t {cluster.content[0:40]} {closest_similarity}{Style.RESET_ALL}')
+                #     cluster_assignments.append({"cluster": cluster, "similarity": closest_similarity})
+
             else:
                 print(f' - Matches: {Fore.RED} No Match{Style.RESET_ALL}')
 
         return cluster_assignments
 
     def persist_memory(self, memory: Thought):
-        if not memory.metadata:
-            self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content])
-        else:
-            self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
+        pass
+        # if not memory.metadata:
+        #     self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content])
+        # else:
+        #     self.memories_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
 
     def persist_cluster(self, memory: Thought):
-        self.clusters_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
+        pass
+        # self.clusters_db.upsert(ids=[memory.id], embeddings=[memory.embedding], documents=[memory.content], metadatas=[memory.metadata])
 
     def persist_association(self, memory: Thought, cluster: Thought, similarity):
-        assocation = {"memory-id": memory.id, "cluster-id": cluster.id, "similarity": similarity}
-        self.associations_db.upsert(
-            ids=[str(uuid.uuid4())], documents=["memory-cluster"], metadatas=[assocation])
+        pass
+        # assocation = {"memory-id": memory.id, "cluster-id": cluster.id, "similarity": similarity}
+        # self.associations_db.upsert(
+        #     ids=[str(uuid.uuid4())], documents=["memory-cluster"], metadatas=[assocation])
 
     def reset(self):
         for collection in self.chroma_client.list_collections():
@@ -327,3 +587,18 @@ class SemanticClusters:
         # self.persist_memory(self.root)
         
         print("Reset.")
+
+    def get_memory_summary(self):
+        results = []
+        for cluster in self.clusters:
+            cluster = self._get_memory_summary_recursive(cluster)
+            results.append(cluster)
+        return results
+
+    def _get_memory_summary_recursive(self, node: Thought, level = 0):
+        result = {"id": node.id, "content": node.content}
+        if node.children:
+            summaries = [self._get_memory_summary_recursive(child, level + 1) for child in node.children]
+            result["children"] = summaries
+        # return text + "}\n"
+        return result

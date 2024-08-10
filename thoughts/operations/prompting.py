@@ -117,11 +117,12 @@ class MessagesBatchAdder(Operation):
 
 class ContextItemAppender(Operation):
     
-    def __init__(self, prompt_name: str = None, item_key: str = None, items = None):
+    def __init__(self, prompt_name: str = None, item_key: str = None, items = None, title = None):
         self.condition = None
         self.prompt_name = prompt_name
         self.item_key = item_key
         self.items = items
+        self.title = title
 
     def execute(self, context: Context, messages = None):
         # get the info we need, or if not available then exit
@@ -145,9 +146,11 @@ class ContextItemAppender(Operation):
 
         if item is not None:
             item_text = context.format_value(item)
-            # load the content item content
-            prompt_message.content += item_text
-        
+            if self.title is not None:
+                item_text = self.title + ":\n" + item_text
+            prompt_message.content += item_text + "\n\n"
+
+
         # return the final
         return messages, None
 
