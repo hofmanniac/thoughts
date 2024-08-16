@@ -323,78 +323,26 @@ def test_semantic_tree():
 def test_semantic_clusters():
     from thoughts.engine import Context
     from thoughts.interfaces.semantic import SemanticClusters
-    from thoughts.interfaces.semantic import Thought
 
-    # data_file = "samples/data/generic-sentences.json"
-    data_file = "samples/data/historical-facts.json"
-    with open(data_file, "r") as f:
-        test_data = json.load(f)
-    
-    context = Context(session_id="semantic-clusters")
-    cluster_memory = SemanticClusters(context=context, hierarchical=True)
+    context = Context(session_id="semantic-clusters", persist_session=False)
+    cluster_memory = SemanticClusters(context=context, hierarchical=False)
 
-    idx = 1
-    for sentence in test_data["clusters"]:
-        message = Thought(sentence, id=str(idx))
-        cluster_memory.add_cluster(message)
-        idx += 1
+    cluster_memory.load_clusters("samples/data/history-topics.json")
+    cluster_memory.load_memories("samples/data/history-items.json")
 
-    for sentence in test_data["items"]:
-        message = Thought(sentence, id=str(idx))
-        cluster_memory.add_memory(message)
-        idx += 1
+    # cluster_memory.load_clusters("samples/data/general-topics.json")
+    # cluster_memory.load_memories("samples/data/general-items.json")
 
-    result = cluster_memory.get_memory_summary()
-    session_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    with open("memory/outputs/semantic-clusters-" + session_id + ".json", "w") as f:
-        json.dump(result, f)
-    
-def test_semantic_clusters_personal():
-    from thoughts.engine import Context
-    from thoughts.interfaces.semantic import SemanticClusters
-    from thoughts.interfaces.semantic import Thought
+    # cluster_memory.load_clusters("samples/data/personal-topics.json")
+    # cluster_memory.load_memories("samples/data/personal-items.json")
 
-    # Function to recursively add sub-items as children
-    def add_children_recursively(data, parent: Thought):
-        for idx, topic in enumerate(data):
-            memory = Thought(topic["topic"] + ": " + topic["content"], id=parent.id + '.' + str(idx), is_cluster=True)
-            semantic_memory.verify_embedding(memory)
-            parent.add_child(memory)
-            if "items" in topic:
-                add_children_recursively(topic["items"], memory)
+    datetime_stamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    path = "memory/outputs/semantic-clusters/semantic-clusters-" + datetime_stamp + "-before.json"
+    cluster_memory.save_as_json(path)
 
-    # Function to add top-level topics and their children
-    def add_topics(data, semantic_memory: SemanticClusters):
-        for idx, topic in enumerate(data):
-            memory = Thought(topic["topic"] + ": " + topic["content"], id=str(idx))
-            if "items" in topic:
-                add_children_recursively(topic["items"], memory)
-            semantic_memory.add_cluster(memory)
-
-    # data_file = "samples/data/personal.json"
-    data_file = "samples/data/personal-main.json"
-    with open(data_file, "r") as f:
-        test_data = json.load(f)
-    
-    context = Context(session_id="semantic-clusters")
-    semantic_memory = SemanticClusters(context=context, recluster=False, hierarchical=False)
-
-    # Add top-level topics and their children to the semantic memory system
-    add_topics(test_data, semantic_memory)
-
-    with open("samples/data/personal-sentences.json", "r") as f:
-        test_data = json.load(f)
-
-    idx = 1000
-    for sentence in test_data:
-        message = Thought(sentence, id=str(idx))
-        semantic_memory.add_memory(message)
-        idx += 1
-
-    result = semantic_memory.get_memory_summary()
-    session_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    with open("memory/outputs/semantic-clusters-" + session_id + ".json", "w") as f:
-        json.dump(result, f)
+    cluster_memory.consolidate_root()
+    path = "memory/outputs/semantic-clusters/semantic-clusters-" + datetime_stamp + "-after.json"
+    cluster_memory.save_as_json(path)
 
 # test_llm()
 # test_graph_executor()
