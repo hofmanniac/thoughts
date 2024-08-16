@@ -126,8 +126,8 @@ class ContextItemAppender(Operation):
 
     def execute(self, context: Context, messages = None):
         # get the info we need, or if not available then exit
-        prompt_message: PromptMessage = messages[-1] if messages else None
-        if prompt_message is None:
+        prompt_message = messages[-1] if messages else None
+        if not prompt_message:
             return messages, None
         
         # load the static content
@@ -139,7 +139,7 @@ class ContextItemAppender(Operation):
         item = None
         if self.item_key is not None:
             item = context.get_item(self.item_key)
-            if "content" in item:
+            if item and "content" in item:
                 item = item["content"]
         elif self.items is not None:
             item = self.items

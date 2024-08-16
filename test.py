@@ -327,8 +327,8 @@ def test_semantic_clusters():
     context = Context(session_id="semantic-clusters", persist_session=False)
     cluster_memory = SemanticClusters(context=context, hierarchical=False)
 
-    cluster_memory.load_clusters("samples/data/history-topics.json")
-    cluster_memory.load_memories("samples/data/history-items.json")
+    # cluster_memory.load_clusters("samples/data/history-topics.json")
+    # cluster_memory.load_memories("samples/data/history-items.json")
 
     # cluster_memory.load_clusters("samples/data/general-topics.json")
     # cluster_memory.load_memories("samples/data/general-items.json")
@@ -336,12 +336,47 @@ def test_semantic_clusters():
     # cluster_memory.load_clusters("samples/data/personal-topics.json")
     # cluster_memory.load_memories("samples/data/personal-items.json")
 
+    cluster_memory.load_memories("samples/data/physics-items.json")
+
     datetime_stamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     path = "memory/outputs/semantic-clusters/semantic-clusters-" + datetime_stamp + "-before.json"
     cluster_memory.save_as_json(path)
 
     cluster_memory.consolidate_root()
     path = "memory/outputs/semantic-clusters/semantic-clusters-" + datetime_stamp + "-after.json"
+    cluster_memory.save_as_json(path)
+
+def test_chat_agent_with_memory():
+    from thoughts.agents.chat import ChatAgent
+    from thoughts.engine import Context
+    from thoughts.operations.console import ConsoleReader
+    from thoughts.interfaces.semantic import SemanticClusters
+    from thoughts.interfaces.semantic import Thought
+
+    context = Context(prompt_path="chat", session_id="test-chat-with-memory")
+    chat_agent = ChatAgent(
+        context=context, prompt_name="chat-continue", init_prompt_name="chat-start", user_prompt="YOU:", num_chat_history=4, handle_io=False)
+    reader = ConsoleReader("YOU:")
+    writer = ConsoleWriter()
+    
+    cluster_memory = SemanticClusters(context=context, hierarchical=False)
+
+    # bot initiates the chat
+    ai_message, control = chat_agent.execute(context)
+    writer.execute(context, ai_message)
+
+    # now loop!
+    while True:
+        message, control = reader.execute(context)
+        if control == True:
+            break
+        memory = Thought(content=message.content)
+        cluster_memory.add_memory(memory)
+        ai_message, control = chat_agent.execute(context, message)
+        writer.execute(context, ai_message)
+
+    datetime_stamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    path = "memory/outputs/semantic-clusters/chat-" + datetime_stamp + ".json"
     cluster_memory.save_as_json(path)
 
 # test_llm()
@@ -360,5 +395,7 @@ def test_semantic_clusters():
 # test_normalize_list()
 # test_semantic_memory()
 # test_semantic_tree()
-test_semantic_clusters()
+# test_semantic_clusters()
 # test_semantic_clusters_personal()
+
+test_chat_agent_with_memory()

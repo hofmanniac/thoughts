@@ -113,6 +113,12 @@ class SemanticClusters:
         self.verify_embedding(memory)
         self.persist_memory(memory)
 
+        if len(self.clusters) == 0:
+            cluster = Thought()
+            self.add_cluster(cluster)
+            self.associate(cluster, memory, 1.0)
+            return
+        
         clusters_matches = self.match_to_clusters(memory, self.clusters)
         for cluster_match in clusters_matches:
             cluster: Thought = cluster_match["cluster"]
@@ -167,6 +173,65 @@ class SemanticClusters:
             return None
         clusters = list(map(self._summarize_content, clusters))
         return clusters
+
+    # def determine_new_clusters(self, cluster: Thought, scaling_factor: int = None):
+    #     # If the current cluster already has fewer or equal children than max_cluster_size, return None
+    #     if len(cluster.children) <= self.max_cluster_size:
+    #         return None
+
+    #     if not scaling_factor:
+    #         scaling_factor = self.scaling_factor
+
+    #     embeddings = [child.embedding for child in cluster.children]
+    #     num_clusters = max(2, len(embeddings) // scaling_factor)    
+    #     kmeans = KMeans(n_clusters=num_clusters)
+        
+    #     # Dimensionality reduction if required
+    #     if self.reduce_dimensionality_when_clustering:
+    #         n_components = min(len(embeddings), 50)
+    #         pca = PCA(n_components=min(len(embeddings[0]), n_components))
+    #         reduced_embeddings = pca.fit_transform(embeddings)
+    #         cluster_map = kmeans.fit_predict(reduced_embeddings)
+    #     else:
+    #         cluster_map = kmeans.fit_predict(embeddings)
+
+    #     if cluster_map is None:
+    #         return
+        
+    #     # Create new clusters based on the cluster_map
+    #     new_clusters = defaultdict(list)
+    #     for i, child in enumerate(cluster.children):
+    #         new_clusters[cluster_map[i]].append(child)
+        
+    #     # Ensure no cluster exceeds max_cluster_size
+    #     result_clusters = []
+    #     for children in new_clusters.values():
+    #         if len(children) > self.max_cluster_size:
+    #             # Re-cluster the children within this cluster to avoid exceeding max_cluster_size
+    #             sub_embeddings = [child.embedding for child in children]
+    #             sub_num_clusters = max(2, len(sub_embeddings) // self.max_cluster_size)
+    #             sub_kmeans = KMeans(n_clusters=sub_num_clusters)
+    #             sub_cluster_map = sub_kmeans.fit_predict(sub_embeddings)
+
+    #             sub_clusters = defaultdict(list)
+    #             for i, child in enumerate(children):
+    #                 sub_clusters[sub_cluster_map[i]].append(child)
+
+    #             for sub_children in sub_clusters.values():
+    #                 new_cluster = Thought(embedding=None)
+    #                 new_cluster.children = sub_children
+    #                 new_cluster.content = self._summarize_content(new_cluster)
+    #                 new_cluster = self.embed_cluster(new_cluster)
+    #                 result_clusters.append(new_cluster)
+    #         else:
+    #             new_cluster = Thought(embedding=None)  # Create a new Thought object
+    #             new_cluster.children = children  # Assign the children to the new cluster
+    #             new_cluster.content = self._summarize_content(new_cluster)
+    #             new_cluster = self.embed_cluster(new_cluster)
+    #             result_clusters.append(new_cluster)
+
+    #     return result_clusters
+
 
     def determine_new_clusters(self, cluster: Thought, scaling_factor: int = None):
 
@@ -449,6 +514,7 @@ class SemanticClusters:
 
     def _consolidate_clusters(self, cluster: Thought, scaling_factor: int = 2):
         consolidated_clusters = self.determine_new_clusters(cluster, scaling_factor)
+        # return consolidated_clusters
         new_clusters = []
         consolidated_cluster: Thought
         for consolidated_cluster in consolidated_clusters:
