@@ -19,3 +19,4 @@ __pycache__
 my_*.*
 memory
 samples/private
+lib/

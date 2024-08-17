@@ -1,27 +1,8 @@
 [
-    {
-      "topic": "Personal Information",
-      "content": "Personal information about the user, including their identity such as name, nicknames, birthdate, birthplace, and family members. It also covers preferences like favorite foods and drinks, hobbies and interests, and preferred entertainment. Additionally, it includes health and fitness information, detailing medical history, exercise routines, and dietary habits."
-    },
-    {
-      "topic": "Professional Life",
-      "content": "Professional information about the user, including their job and career details like current job, past jobs, and career goals. It also covers educational background, professional skills, and certifications or training. Moreover, it includes information about work projects, including current projects, past projects, and future plans."
-    },
-    {
-      "topic": "Social Relationships",
-      "content": "Information about the user's social relationships, including close friends, colleagues, and various social circles. It also covers communication details like contact information, meeting schedules, and messaging patterns. Additionally, it includes information about social events, professional events, and personal milestones."
-    },
-    {
-      "topic": "Daily Life",
-      "content": "Details about the user's daily life, including their daily, weekly, and monthly or yearly routines. It also covers tasks and to-dos, such as current tasks, completed tasks, and future plans. Additionally, it includes personal development goals, learning objectives, self-improvement plans, and health goals."
-    },
-    {
-      "topic": "Interests and Activities",
-      "content": "Information about the user's interests and activities, including entertainment preferences such as favorite books, movies, TV shows, music, and art. It also covers hobbies like sports, games, creative hobbies, and outdoor activities. Additionally, it includes technology interests, such as preferred gadgets, software, apps, and tech trends."
-    },
-    {
-      "topic": "Financial Information",
-      "content": "Financial information about the user, including income sources such as salary, wages, investments, and side income. It also covers expenses, detailing monthly expenses, major purchases, and regular bills or subscriptions. Additionally, it includes savings and financial goals, such as savings accounts, financial objectives, and retirement plans."
-    }
-  ]
-  
+  "Personal Information: Personal information about the user, including their identity such as name, nicknames, birthdate, birthplace, and family members. It also covers preferences like favorite foods and drinks, hobbies and interests, and preferred entertainment. Additionally, it includes health and fitness information, detailing medical history, exercise routines, and dietary habits.",
+  "Professional Life: Professional information about the user, including their job and career details like current job, past jobs, and career goals. It also covers educational background, professional skills, and certifications or training. Moreover, it includes information about work projects, including current projects, past projects, and future plans.",
+  "Social Relationships: Information about the user's social relationships, including close friends, colleagues, and various social circles. It also covers communication details like contact information, meeting schedules, and messaging patterns. Additionally, it includes information about social events, professional events, and personal milestones.",
+  "Daily Life: Details about the user's daily life, including their daily, weekly, and monthly or yearly routines. It also covers tasks and to-dos, such as current tasks, completed tasks, and future plans. Additionally, it includes personal development goals, learning objectives, self-improvement plans, and health goals.",
+  "Interests and Activities: Information about the user's interests and activities, including entertainment preferences such as favorite books, movies, TV shows, music, and art. It also covers hobbies like sports, games, creative hobbies, and outdoor activities. Additionally, it includes technology interests, such as preferred gadgets, software, apps, and tech trends.",
+  "Financial Information:: Financial information about the user, including income sources such as salary, wages, investments, and side income. It also covers expenses, detailing monthly expenses, major purchases, and regular bills or subscriptions. Additionally, it includes savings and financial goals, such as savings accounts, financial objectives, and retirement plans."
+]
