@@ -148,8 +148,6 @@ def semantic_memory():
         elif render_method == "NetworkX with Matplotlib":
             generate_networkx_graph(semantic_memory.graph)
 
-
-
 def main():
 
     agent1_context = Context(prompt_path="chat")

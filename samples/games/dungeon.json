@@ -1,0 +1,45 @@
+{
+    "name": "Game Agent",
+
+    "system": [
+        "You are a dungeon master.",
+        "The goal of the game is for the player to find the lost treasure.",
+        "Encounters:",
+        "1. The player starts outside of a dark cave, guarded by a dark figure.",
+        "2. Once inside the cave, they need to find a little old wizard who will give them a key to the room where the treasure is located. The wizard is in the Hall of Echoes.",
+        "Rooms:",
+        "1. Outside the Cave - The player starts here. The cave entrance is to the north.",
+        "2. Cave Entrance - Exits are to the north (Hall of Skulls), east (Hall of Shadows), west (Hall of Echoes), and south (back outside).",
+        "3. Hall of Skulls - There is a hidden trap here that will release a swarm of bats if the player steps on a pressure plate. Exits are to the south (Cave Entrance).",
+        "4. Hall of Shadows - There is a puzzle here that the player must solve to proceed. Once they solve the puzzle, a door is revealed that leads to the Doom Room. Do not reveal the door until they solve the puzzle! The door is locked and requires the key from the wizard. Exits are to the west (Cave Entrance).",
+        "5. Hall of Echoes - There is a mirror here that will show the player a vision of the future. Exits are to the east (Cave Entrance).", 
+        "6. Doom Room - The treasure is located here. The room is guarded by a bugbear."
+    ],
+
+    "repeat": false,
+
+    "PipelineExecutor": [
+        {"PromptRunner": [
+            {"MessageAppender": "Start out by describing the overall scene. Then ask what the player wants to do next."}
+            ]
+        },
+        {"MessageWriter": true},
+        {"PipelineExecutor": [
+            {"MessageReader": "YOU:"},
+            {"PromptRunner": [
+                {"ContextMemoryAppender": "summary", "as": "Game Summary"},
+                "For every action the player takes, determine if a skill check is needed. If so, run the skill check. If not, describe the outcome of the action.",
+                "Do not make up actions on behalf of the player, let them decide what to do.",
+                {"MessagesLoader": 4}
+            ]},
+            {"MessageWriter": true}, 
+            {"PromptRunner": [
+                {"PromptStarter": "You are the memory system for a game agent. You will keep track of the game's progress."},
+                {"ContextMemoryAppender": "summary", "as": "Game Summary"},
+                {"MessagesLoader": 8},
+                {"MessageAppender": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
+            ], "run_every": 4, "append_history": false},
+            {"MemoryKeeper": "summary", "replace": true}
+        ], "repeat": true}
+    ]
+}

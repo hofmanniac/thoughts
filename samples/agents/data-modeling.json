@@ -1,0 +1,30 @@
+{
+    "name": "Data Modeling",
+
+    "repeat": false,
+
+    "Agents": [
+        {"Agent": "Joe", "role": "Your name is Joe and you create data models for federal mission-specific applications."},
+        {"Agent": "Cathy", "role": "Your name is Cathy and you validate data models against federal mission-specific business processes."},
+        {"Agent": "Barry", "role": "Your name is Barry and you help summarize data model information."}
+    ],
+
+    "Tasks": [
+        
+        {"Task": "Brainstorm and Summarize", "Repeat": true, "Steps": [
+            
+            {"Ask": "Use case?"},
+
+            {"Task": "Brainstorm", "maxRuns": 3, "Steps": [
+                {"Chat": "Joe", 
+                    "start": "State the use case. Then create a list of tables and fields for the provided use case.",
+                    "instruction": "Revise the data model based on the feedback provided."},
+                {"Chat": "Cathy", 
+                    "instruction": "Provide feedback on the data model based on the business process for the use case."}
+            ]},
+
+            {"Analyze": "Barry", "into": "Summary",
+                "instruction": "Summarize the final data model."}
+        ]}
+    ]
+}

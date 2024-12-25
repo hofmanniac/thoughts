@@ -1,8 +1,280 @@
 from datetime import datetime
 import os
+import re
 from thoughts.engine import Context
+from thoughts.interfaces.messaging import PromptMessage, AIMessage, HumanMessage, SystemMessage
 from thoughts.operations.core import Operation
-from thoughts.operations.prompting import MessagesBatchAdder, PromptConstructor, PromptRunner, PromptStarter, StaticContentLoader, StaticPromptLoader
+# from thoughts.operations.prompting import MessagesBatchAdder, PromptConstructor, PromptRunner, PromptStarter, PromptAppender
+from thoughts.util import convert_to_list
+
+class DictFormatter(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
+    def __getitem__(self, key):
+        value = dict.__getitem__(self, key)
+        if isinstance(value, list):
+            return '\n'.join(str(item) for item in value)
+        elif isinstance(value, dict):
+            return ', '.join(f"{k}: {v}" for k, v in value.items())
+        return value
+
+class PromptStarter(Operation):
+    def __init__(self, prompt_name: str = None, role: str = "system", content: str = "You are a helpful AI assistant."):
+        self.condition = None
+        self.role = role
+        self.prompt_name = prompt_name
+        self.content = content
+    def execute(self, context: Context, messages = None):
+        import thoughts.interfaces.prompting  # Lazy import
+
+        if self.prompt_name is not None:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            content = prompt["content"]
+        else:
+            content = self.content
+        
+        if messages is None:
+            messages = []
+
+        if self.role == "system":
+            messages.append(SystemMessage(content=content))
+        elif self.role == "ai":
+            messages.append(AIMessage(content=content))
+        elif self.role == "human":
+            messages.append(HumanMessage(content=content))
+        
+        return messages, None
+    
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        return cls(content=json_snippet)
+
+class PromptAppender(Operation):
+    def __init__(self, prompt_name: str = None, content: str = None):
+        self.condition = None
+        self.prompt_name = prompt_name
+        self.content = content
+    def execute(self, context: Context, messages = None):
+        import thoughts.interfaces.prompting  # Lazy import
+
+        if not messages:
+            return messages, None
+        
+        prompt_message: PromptMessage = messages[-1] if messages else None
+    
+        if self.content is not None:
+            content = self.content
+        else:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            content = prompt["content"]
+
+        prompt_message.content += content
+        return messages, None
+
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        return cls(content=json_snippet)
+
+class MessageAppender(Operation):
+    def __init__(self, prompt_name: str = None, content: str = None):
+        self.condition = None
+        self.prompt_name = prompt_name
+        self.content = content
+    def execute(self, context: Context, messages = None):
+        import thoughts.interfaces.prompting  # Lazy import
+
+        if not messages:
+            messages = []
+        
+        if self.content is not None:
+            content = self.content
+        else:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            content = prompt["content"]
+
+        prompt_message = HumanMessage(content=content)
+        messages.append(prompt_message)
+        return None, None
+
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        content=json_snippet["instruct"]
+        return cls(content=content)
+
+class MessagesLoader(Operation):
+    def __init__(self, num_messages: int = 4):
+        self.condition = None
+        self.num_messages = num_messages
+    def execute(self, context: Context, messages = None):
+        message_history = context.peek_messages(self.num_messages)
+        if messages is None:
+            messages = []
+        messages.extend(message_history)
+        return messages, None
+    
+class MessagesBatchAdder(Operation):
+    def __init__(self, batch_size: int = 4, exclude_ids: list = [], allow_partial_batch: bool = False):
+        self.batch_size = batch_size
+        self.exclude_ids = exclude_ids
+        self.allow_partial_batch = allow_partial_batch
+        self.current_batch = 0
+
+    def execute(self, context: Context, messages: list = []):
+        new_messages = [(i, msg) for i, msg in enumerate(context.messages) if msg.message_id not in self.exclude_ids]
+
+        if not new_messages:
+            return None, False
+
+        start_idx = self.current_batch * self.batch_size
+        end_idx = start_idx + self.batch_size
+
+        batch = new_messages[start_idx:end_idx]
+
+        if not batch:
+            return messages, False
+
+        indices, batch_messages = zip(*batch) if batch else ([], [])
+
+        if not self.allow_partial_batch and len(batch_messages) < self.batch_size:
+            return [], False
+
+        messages.extend(batch_messages)
+
+        self.current_batch += 1
+
+        if end_idx >= len(new_messages):
+            self.current_batch = 0
+            return messages, False
+        
+        return messages, True
+
+class ContextItemAppender(Operation):
+    def __init__(self, prompt_name: str = None, item_key: str = None, items = None, title = None):
+        self.condition = None
+        self.prompt_name = prompt_name
+        self.item_key = item_key
+        self.items = items
+        self.title = title
+
+    def execute(self, context: Context, messages = None):
+        import thoughts.interfaces.prompting  # Lazy import
+
+        prompt_message = messages[-1] if messages else None
+        if not prompt_message:
+            return messages, None
+        
+        if self.prompt_name:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            prompt_message.content += prompt["content"]
+        
+        item = None
+        if self.item_key is not None:
+            item = context.get_item(self.item_key)
+            if item and "content" in item:
+                item = item["content"]
+        elif self.items is not None:
+            item = self.items
+
+        if item is not None:
+            item_text = context.format_value(item)
+            if self.title is not None:
+                item_text = self.title + ":\n" + item_text
+            prompt_message.content += item_text + "\n\n"
+
+        return messages, None
+
+class PromptConstructor(Operation):
+    def __init__(self, operations: list):
+        self.condition = None
+        self.operations = operations
+    def execute(self, context: Context, message = None):
+        operation: Operation
+        messages = []
+        for operation in self.operations:
+            messages, control = operation.execute(context, messages)
+        return messages, None
+          
+class PromptRunner(Operation):
+    def __init__(
+        self,
+        prompt_name: str = None,
+        prompt_constructor: PromptConstructor = None,
+        num_chat_history=0,
+        stream=True,
+        run_every: int = 1,
+        append_history: bool =True, 
+        run_as_message: bool = False
+    ):
+        self.prompt_name = prompt_name
+        self.num_chat_history = num_chat_history
+        self.prompt_constructor = prompt_constructor
+        self.condition = None
+        self.stream = stream
+        self.run_every = run_every
+        self.runs_since_last = 0
+        self.append_history = append_history
+        self.run_as_message = run_as_message
+
+    def execute(self, context: Context, message = None):
+        self.runs_since_last += 1
+        if self.runs_since_last < self.run_every:
+            return None, None
+        self.runs_since_last = 0
+        
+        if self.prompt_constructor is None:
+            prompt_starter = PromptStarter(self.prompt_name)
+            prompt_constructor = PromptConstructor([prompt_starter])
+        else:
+            prompt_constructor = self.prompt_constructor
+        messages, control = prompt_constructor.execute(context, message)
+
+        history_messages = context.peek_messages(self.num_chat_history)
+        messages.extend(history_messages)
+
+        if message is not None:
+            messages.append(message)
+
+        if self.append_history:
+            context.push_message(message)
+           
+        ai_message = context.llm.invoke(messages, self.stream)
+        
+        if self.append_history:
+            context.push_message(ai_message)
+        
+        return ai_message, None
+
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        num_chat_history = json_snippet.get("num_chat_history", 0)
+        run_every = json_snippet.get("run_every", 1)
+
+        nodes = []
+
+        def add_nodes(items, start_node_defined):
+            for item in items:
+                if "instruct" in item:
+                    op = MessageAppender.parse_json(item, config)
+                elif "recall" in item:
+                    from thoughts.operations.memory import ContextMemoryAppender  # Lazy import
+                    op = ContextMemoryAppender.parse_json(item, config)
+                elif not start_node_defined:
+                    op = PromptStarter.parse_json(item, config)
+                    start_node_defined = True
+                else:
+                    op = PromptAppender.parse_json(item, config)
+                nodes.append(op)
+            return start_node_defined
+
+        start_node_defined = add_nodes(config.get("system", []), False)
+        add_nodes(json_snippet.get("think", []), start_node_defined)
+
+        prompt_constructor = PromptConstructor(nodes)
+        return cls(prompt_constructor=prompt_constructor, num_chat_history=num_chat_history, run_every=run_every)
 
 class RAGContextAdder(Operation):
 
@@ -11,6 +283,7 @@ class RAGContextAdder(Operation):
         self.title = title
 
     def execute(self, context: Context, message = None):
+        from thoughts.operations.prompting import PromptConstructor  # Lazy import
 
         search_message = message if message is not None else context.get_last_message()
         memories = context.memory.find(self.collection_name, search_message)
@@ -25,14 +298,24 @@ class RAGContextAdder(Operation):
         return rag_context, None
     
 class MemoryKeeper(Operation):
-    def __init__(self, item_key: str = ""):
+    def __init__(self, item_key: str = "", replace: bool = False):
         self.condition = None
         self.item_key = item_key
+        self.replace = replace
     def execute(self, context: Context, message = None):
         if message is not None:
-            context.append_item(self.item_key, message.content)
+            if self.replace:
+                context.set_item(self.item_key, message.content)
+            else:
+                context.append_item(self.item_key, message.content)
         return None, None
-
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = "into" if "into" in json_snippet else "MemoryKeeper"
+        key = json_snippet[moniker]
+        replace = json_snippet.get("replace", False)
+        return cls(item_key=key, replace=replace)
+    
 class MemoryRetriever(Operation):
     def __init__(self, key: str, title: str, instructions: str = None):
         self.key = key
@@ -43,6 +326,77 @@ class MemoryRetriever(Operation):
         if items is None:
             return None, None
         return items, None
+    
+class ContextMemoryAppender(Operation):
+    def __init__(self, key: str, title: str = None):
+        self.condition = None
+        self.key = key
+        self.title = title
+    def execute(self, context: Context, messages = None):
+        if not messages:
+            return messages, None
+        content = context.get_item(self.key)
+        
+        if content is None:
+            return messages, None
+        
+        if type(content) is list:
+            content = "\n".join(content)
+        elif isinstance(content, PromptMessage):
+            content = "\n\n" + content.content
+
+        prompt_message: PromptMessage = messages[-1] if messages else None
+        prompt_message.content += self.title + ":\n" + content if self.title is not None else content
+        return messages, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = "recall" if "recall" in json_snippet else "ContextMemoryAppender"
+        key = json_snippet[moniker]
+        title = json_snippet.get("as", None)
+        return cls(key=key, title=title)
+    
+def split_numbered_list(text):
+    """
+    Splits the text from an LLM response into a list of numbered items.
+    A new item starts with a number at the beginning of a line.
+
+    Args:
+        text (str): The input text containing a numbered list.
+
+    Returns:
+        list: A list of strings, each representing a numbered item.
+    """
+    # Use regex to find lines starting with a number followed by a period or parenthesis
+    pattern = r"(?m)^\d+\."
+    matches = re.split(pattern, text)
+
+    # Clean up the results and ignore the empty first split if it exists
+    items = [item.strip() for item in matches if item.strip()]
+
+    # Re-prepend the numbering for each item to ensure correctness
+    return [f"{i+1}. {item}" for i, item in enumerate(items)]
+
+class TextSplitter(Operation):
+    def __init__(self, key: str, delimiter: str = "\n", store_into: str = None):
+        self.key = key
+        self.delimiter = delimiter
+        self.condition = None
+        self.store_into = store_into
+    def execute(self, context: Context, message = None):
+        text = context.get_item(self.key)
+        if isinstance(text, PromptMessage):
+            text = text.content
+        items = split_numbered_list(text)
+        # items = text.split(self.delimiter)
+        # items = [item for item in items if len(item) > 0]
+        context.set_item(self.store_into, items)
+        return items, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        key = json_snippet["TextSplitter"]
+        delimiter = json_snippet.get("delimiter", "\n")
+        store_into = json_snippet.get("into", "#temp")
+        return cls(key=key, delimiter=delimiter, store_into=store_into)
     
 class MessagesSummarizer(Operation):
     
@@ -81,8 +435,7 @@ class MessagesSummarizer(Operation):
 
             # if loop = False, continue processing the last batch of messages (last time through)!
 
-            messages, control = PromptStarter(
-            role="human", prompt_name=self.prompt_name).execute(context, messages)
+            messages, control = PromptStarter(self.prompt_name, role="human").execute(context, messages)
 
             summary, control = PromptRunner(
             stream=False, append_history=False).execute(context, messages)
@@ -104,8 +457,8 @@ class InformationExtractor(Operation):
 
     def _extract_info(self, context: Context, content):
 
-        extractor_persona = StaticPromptLoader(self.extractor_prompt)
-        extractor_content = StaticContentLoader(content=content)
+        extractor_persona = PromptStarter(self.extractor_prompt)
+        extractor_content = PromptAppender(content=content)
         extractor = PromptConstructor([extractor_persona, extractor_content])
 
         runner = PromptRunner(prompt_constructor=extractor, run_as_message=True)
@@ -123,8 +476,8 @@ class InformationExtractor(Operation):
         
         content = context.get_item("summary")
 
-        extractor_persona = StaticPromptLoader(self.extractor_prompt)
-        extractor_content = StaticContentLoader(content=content)
+        extractor_persona = PromptStarter(self.extractor_prompt)
+        extractor_content = PromptAppender(content=content)
         extractor = PromptConstructor([extractor_persona, extractor_content])
 
         runner = PromptRunner(prompt_constructor=extractor, run_as_message=True)
@@ -178,7 +531,3 @@ class SessionIterator(Operation):
                 results.append(result)
 
         return results, None
-
-
-
-

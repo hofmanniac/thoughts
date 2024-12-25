@@ -1,7 +1,9 @@
 from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage, SystemMessage
+from thoughts.operations.console import ConsoleWriter
 from thoughts.operations.core import Operation
 import thoughts.interfaces.prompting
 from thoughts.engine import Context
+from thoughts.operations.memory import ContextMemoryAppender, MemoryKeeper
 from thoughts.util import convert_to_list
 
 class DictFormatter(dict):
@@ -16,19 +18,29 @@ class DictFormatter(dict):
         return value
 
 class PromptStarter(Operation):
-    def __init__(self, role: str = "system", prompt_name: str = None, content: str = "You are a helpful AI assistant."):
+    """
+    Start a new prompt. Defaults to a SystemMessage if no role is supplied.
+
+    - If prompt_name is provided, loads the prompt from the template specified in prompt_name.
+    - IF prompt_name is not provied, uses the content. 
+    - If content is not provided, uses the default "You are a helpful AI assistant." prompt.
+
+    Returns a single message in a list, for subsequent operations to append to.
+    """
+    def __init__(self, prompt_name: str = None, role: str = "system", content: str = "You are a helpful AI assistant."):
         self.condition = None
         self.role = role
         self.prompt_name = prompt_name
         self.content = content
     def execute(self, context: Context, messages = None):
-        if self.content is not None:
-            content = self.content
-        else:
+        
+        if self.prompt_name is not None:
             base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
             prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
             content = prompt["content"]
-
+        else:
+            content = self.content
+        
         if messages is None:
             messages = []
 
@@ -40,6 +52,15 @@ class PromptStarter(Operation):
             messages.append(HumanMessage(content=content))
         
         return messages, None
+    
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        if type(json_snippet) is str:
+            return cls(content=json_snippet)
+        elif type(json_snippet) is dict:
+            moniker = "start" if "start" in json_snippet else "PromptStarter"
+            return cls(content=json_snippet[moniker])
+        return None
     
 class PromptAppender(Operation):
     def __init__(self, prompt_name: str = None, content: str = None):
@@ -59,10 +80,59 @@ class PromptAppender(Operation):
             prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
             content = prompt["content"]
 
-        prompt_message.content += content
+        prompt_message.content += content + " "
         return messages, None
 
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        return cls(content=json_snippet)
+
+class MessageAppender(Operation):
+    def __init__(self, prompt_name: str = None, content: str = None):
+        self.condition = None
+        self.prompt_name = prompt_name
+        self.content = content
+    def execute(self, context: Context, messages = None):
+        if not messages:
+            messages = []
+        
+        if self.content is not None:
+            content = self.content
+        else:
+            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            content = prompt["content"]
+
+        prompt_message = HumanMessage(content=content)
+        messages.append(prompt_message)
+        return messages, None
+
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = "instruct" if "instruct" in json_snippet else "MessageAppender"
+        content=json_snippet[moniker]
+        return cls(content=content)
+
 class MessagesLoader(Operation):
+    """
+    Loads a specified number of recent messages from the context's message history 
+    and appends them to an existing list of messages.
+
+    Behavior:
+        - Retrieves a specified number of past messages from the context using `peek_messages`.
+        - Adds the retrieved messages to the provided list, or initializes a new list if none is given.
+        - Returns the updated list of messages.
+
+    Args:
+        context (Context): The context object used to retrieve message history.
+        messages (list, optional): A list of messages to extend with the loaded message history. 
+            If not provided, a new list is initialized.
+
+    Returns:
+        tuple:
+            - The updated list of messages including the loaded message history.
+            - None (placeholder for additional return data, unused in this implementation).
+    """
     def __init__(self, num_messages: int = 4):
         self.condition = None
         self.num_messages = num_messages
@@ -72,6 +142,10 @@ class MessagesLoader(Operation):
             messages = []
         messages.extend(message_history)
         return messages, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = "history" if "history" in json_snippet else "MessagesLoader"
+        return cls(num_messages=json_snippet[moniker])
     
 class MessagesBatchAdder(Operation):
     def __init__(self, batch_size: int = 4, exclude_ids: list = [], allow_partial_batch: bool = False):
@@ -116,7 +190,27 @@ class MessagesBatchAdder(Operation):
         return messages, True
 
 class ContextItemAppender(Operation):
-    
+    """
+    Appends additional content to the last message in a given list based on 
+    configuration and the system's context.
+
+    Behavior:
+        - Adds predefined or dynamically loaded template content if specified.
+        - Includes additional context-specific data or items, optionally formatted 
+          and prefixed with a title.
+        - Returns the updated messages with the appended content.
+
+    Args:
+        context (Context): The context containing configuration and data for
+            retrieving or formatting content.
+        messages (list, optional): A list of message objects to modify. Defaults to None.
+
+    Returns:
+        tuple:
+            - The modified list of messages.
+            - None (placeholder for additional data).
+    """
+     
     def __init__(self, prompt_name: str = None, item_key: str = None, items = None, title = None):
         self.condition = None
         self.prompt_name = prompt_name
@@ -150,48 +244,47 @@ class ContextItemAppender(Operation):
                 item_text = self.title + ":\n" + item_text
             prompt_message.content += item_text + "\n\n"
 
-
         # return the final
         return messages, None
 
-class StaticPromptLoader(Operation):
-    def __init__(self, prompt_name: str, insert_item: str = None):
-        self.condition = None
-        self.prompt_name = prompt_name
-        self.insert_item = insert_item
+# class StaticPromptLoader(Operation):
+#     def __init__(self, prompt_name: str, insert_item: str = None):
+#         self.condition = None
+#         self.prompt_name = prompt_name
+#         self.insert_item = insert_item
 
-    def parse_template(self, context: Context, template: str):
-        try:
-            parsed_text = template.format_map(DictFormatter(context.items))
-        except KeyError as e:
-            raise ValueError(f"Missing key in context items: {e}")
-        return parsed_text
+#     def parse_template(self, context: Context, template: str):
+#         try:
+#             parsed_text = template.format_map(DictFormatter(context.items))
+#         except KeyError as e:
+#             raise ValueError(f"Missing key in context items: {e}")
+#         return parsed_text
 
-    def execute(self, context: Context):
-        base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
-        prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
-        prompt["content"] = self.parse_template(context, prompt["content"])
-        return prompt, None
+#     def execute(self, context: Context, message = None):
+#         base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+#         prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+#         prompt["content"] = self.parse_template(context, prompt["content"])
+#         return prompt, None
 
-class StaticContentLoader(Operation):
-    def __init__(self, content = None, title: str = None, instructions: str = None):
-        self.condition = None
-        self.content = content
-        self.title = title
-        self.instructions = instructions
-    def execute(self, context: Context, message = None):
-        if self.content is None:
-            return None, None
-        if type(self.content) is list:
-            return {"content": "\n".join(self.content), "title": self.title, "instructions": self.instructions }, None
-        elif type(self.content) is dict:
-            return {"content": str(self.content), "title": self.title,  "instructions": self.instructions}, None
+# class StaticContentLoader(Operation):
+#     def __init__(self, content = None, title: str = None, instructions: str = None):
+#         self.condition = None
+#         self.content = content
+#         self.title = title
+#         self.instructions = instructions
+#     def execute(self, context: Context, message = None):
+#         if self.content is None:
+#             return None, None
+#         if type(self.content) is list:
+#             return {"content": "\n".join(self.content), "title": self.title, "instructions": self.instructions }, None
+#         elif type(self.content) is dict:
+#             return {"content": str(self.content), "title": self.title,  "instructions": self.instructions}, None
 
 class PromptConstructor(Operation):
     def __init__(self, operations: list):
         self.condition = None
         self.operations = operations
-    def execute(self, context: Context):
+    def execute(self, context: Context, message = None):
         operation: Operation
         messages = []
         for operation in self.operations:
@@ -199,6 +292,24 @@ class PromptConstructor(Operation):
         return messages, None
           
 class PromptRunner(Operation):
+    """
+    Runs a prompt against an LLM with customizable behavior.
+
+    - **Frequency of Execution**: Use `run_every` to specify how often the prompt runs (e.g., `2` to run every other call). Leave it as the default to run on every invocation.
+
+    - **Prompt Construction**: Provide a `prompt_constructor` for a custom pipeline to build prompts. If omitted, the `prompt_name` is used as a single system prompt.
+
+    - **Chat History**: Set `num_chat_history` to include recent messages from the context in the prompt. Defaults to `0` for no history.
+
+    - **Streaming**: Enable `stream` (default) to receive a streaming response from the LLM or set it to `False` for a single complete response.
+
+    - **History Management**: Use `append_history` to control whether input and output messages are saved to the context. Defaults to `True`.
+
+    - **Execution**: Call `execute` with a `Context` object and an optional message. The method builds the prompt, adds context messages, sends it to the LLM, and returns the generated response.
+
+    This class is ideal for creating dynamic and configurable LLM interactions, supporting both simple and advanced workflows.
+    """
+
     def __init__(
         self,
         prompt_name: str = None,
@@ -206,8 +317,13 @@ class PromptRunner(Operation):
         num_chat_history=0,
         stream=True,
         run_every: int = 1,
-        append_history: bool =True, 
-        run_as_message: bool = False
+        append_history: bool = False, 
+        run_as_message: bool = False, 
+        append_last_message: bool = False, 
+        store_into: str = "#temp", 
+        format_as: str = None, 
+        temperature: float = 0.8,
+        console: bool = False
     ):
         self.prompt_name = prompt_name
         self.num_chat_history = num_chat_history
@@ -217,35 +333,147 @@ class PromptRunner(Operation):
         self.run_every = run_every
         self.runs_since_last = 0
         self.append_history = append_history
+        self.append_last_message = append_last_message
         self.run_as_message = run_as_message
+        self.store_into = store_into
+        self.format_as = format_as
+        self.temperature = temperature
+        self.console = console
 
     def execute(self, context: Context, message = None):
 
+        context.logger("PromptRunner")
+
+        # check if 'run every' is set and need to wait
         self.runs_since_last += 1
         if self.runs_since_last < self.run_every:
             return None, None
         self.runs_since_last = 0
         
-        if type(message) is list:
-            messages = message
+        # construct the main (system) prompt
+        if self.prompt_constructor is None:
+            prompt_starter = PromptStarter(self.prompt_name)
+            prompt_constructor = PromptConstructor([prompt_starter])
         else:
-            if self.prompt_constructor is None:
-                static_prompt_loader = StaticPromptLoader(self.prompt_name)
-                prompt_constructor = PromptConstructor([static_prompt_loader])
-            else:
-                prompt_constructor = self.prompt_constructor
-                messages, control = prompt_constructor.execute(context)
+            prompt_constructor = self.prompt_constructor
+        messages, control = prompt_constructor.execute(context, message)
 
-            if message is not None:
-                messages.append(message)
-            
-        ai_message = context.llm.respond(messages, self.stream)
-        
+        # grab the last several messages from the context
+        # and append it to the start
+        history_messages = context.peek_messages(self.num_chat_history)
+        messages.extend(history_messages)
+
+        # append the incoming message if there is one
+        if self.append_last_message and message is not None:
+            messages.append(message)
+
+        # record incoming message to context history
+        if self.append_history:
+            context.push_message(message)
+           
+        # run the prompt against the LLM
+        if not self.format_as:
+            ai_message = context.llm.invoke(messages, self.stream, temperature=self.temperature)
+        elif self.format_as == "json":
+            # API requires the word 'json' to be included in the messages
+            last_message: PromptMessage = messages[-1]
+            last_message.content = last_message.content + "\nFormat as JSON."
+            messages[-1] = last_message
+            ai_message = context.llm.invoke(messages, self.stream, json=True, temperature=self.temperature)
+
+        # append to history if needed
         if self.append_history:
             context.push_message(ai_message)
         
-        return ai_message, None
+        context.set_item(self.store_into, ai_message)
 
+        if self.console:
+            ConsoleWriter(text=ai_message.content).execute(context)
+
+        # return the message generated
+        return ai_message, None
+    
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+
+        num_chat_history = json_snippet.get("num_chat_history", 0)
+        run_every = json_snippet.get("run_every", 1)
+        append_history = json_snippet.get("append_history", False)
+        append_last_message = json_snippet.get("append_last_message", False)
+        store_into = json_snippet.get("into", "#temp")
+        format_as = json_snippet.get("format", None)
+        temperature = json_snippet.get("temp", None)
+        write_to_console = json_snippet.get("console", False)
+
+        nodes = []
+
+        def add_nodes(items, start_node_defined):
+            for item in items:
+                if type(item) is dict and "instruct" in item or "MessageAppender" in item:
+                    op = MessageAppender.parse_json(item, config)
+                elif type(item) is dict and "remember" in item or "MemoryKeeper" in item:
+                    op = MemoryKeeper.parse_json(item, config)
+                elif type(item) is dict and "recall" in item or "ContextMemoryAppender" in item:
+                    op = ContextMemoryAppender.parse_json(item, config)
+                elif type(item) is dict and "start" in item or "PromptStarter" in item:
+                    nodes.clear()
+                    op = PromptStarter.parse_json(item, config)
+                    start_node_defined = True
+                elif type(item) is dict and "history" in item or "MessagesLoader" in item:
+                    op = MessagesLoader.parse_json(item, config)
+                elif not start_node_defined:
+                    op = PromptStarter.parse_json(item, config)
+                    start_node_defined = True
+                else:
+                    op = PromptAppender.parse_json(item, config)
+                nodes.append(op)
+            return start_node_defined
+
+        start_node_defined = add_nodes(config.get("system", []), False)
+
+        main_key = (
+            "think" if "think" in json_snippet else
+            "communicate" if "communicate" in json_snippet else
+            "remember" if "remember" in json_snippet else
+            "PromptRunner" if "PromptRunner" in json_snippet else
+            None
+    )
+        add_nodes(json_snippet.get(main_key, []), start_node_defined)
+
+        prompt_constructor = PromptConstructor(nodes)
+        return cls(prompt_constructor=prompt_constructor, 
+                   num_chat_history=num_chat_history, run_every=run_every, 
+                   append_history=append_history, append_last_message=append_last_message, 
+                   store_into=store_into, format_as=format_as, temperature=temperature, console=write_to_console)
+    
+    # @classmethod
+    # def parse_json(cls, json_snippet, config):
+
+    #     num_chat_history = json_snippet.get("num_chat_history", 0)
+
+    #     start_node_defined = False
+    #     nodes = []
+
+    #     if "system" in config:
+    #         for item in config["system"]:
+    #             if start_node_defined == False:
+    #                 op = PromptStarter.parse_json(item, config)
+    #                 start_node_defined = True
+    #             else:
+    #                 op = PromptAppender.parse_json(item, config)
+    #             nodes.append(op)
+
+    #     for item in json_snippet["think"]:
+    #         if start_node_defined == False:
+    #             op = PromptStarter.parse_json(item, config)
+    #             start_node_defined = True
+    #         else:
+    #             op = PromptAppender.parse_json(item, config)
+    #         nodes.append(op)
+            
+    #     prompt_constructor = PromptConstructor(nodes)
+    #     return cls(prompt_constructor=prompt_constructor, num_chat_history=num_chat_history)
+    
 # class PromptRunner1(Operation):
 #     def __init__(
 #         self,

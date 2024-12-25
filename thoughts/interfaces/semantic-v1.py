@@ -430,14 +430,14 @@ class SemanticClusters:
             # result = messages[0].content
 
             messages, control = PromptStarter().execute(self.context)
-            messages, control = PromptStarter("human", content=instructions).execute(self.context, messages)
+            messages, control = PromptStarter(role="human", content=instructions).execute(self.context, messages)
             messages, control = ContextItemAppender(items=set_one, title="Set One").execute(self.context, messages)
             messages, control = ContextItemAppender(items=set_two, title="Set Two").execute(self.context, messages)
             message, control = PromptRunner(append_history=False).execute(self.context, messages)
             result = message.content
 
             messages, control = PromptStarter().execute(self.context)
-            messages, control = PromptStarter("human", content="Write a paragraph summarizing what Set One from the description below is about. Only describe what it does include. Begin with the phrase 'Set One is about'. Do not mention 'Set Two'. \n\n" + result).execute(self.context, messages)
+            messages, control = PromptStarter(role="human", content="Write a paragraph summarizing what Set One from the description below is about. Only describe what it does include. Begin with the phrase 'Set One is about'. Do not mention 'Set Two'. \n\n" + result).execute(self.context, messages)
             message, control = PromptRunner(append_history=False).execute(self.context, messages)
             result = message.content
 

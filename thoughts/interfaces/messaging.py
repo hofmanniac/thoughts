@@ -36,7 +36,7 @@ class PromptMessage(ABC):
 
 class SystemMessage(PromptMessage):
     def __init__(self, content: str = None):
-        self._content = content
+        self._content = content if content else "You are a helpful AI assistant.\n"
         self._embedding = None
         self.message_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
         self._message_id = str(self.message_time)
@@ -76,6 +76,25 @@ class SystemMessage(PromptMessage):
     @message_id.setter
     def message_id(self, value):
         self._message_id = value
+
+    def __str__(self):
+        """
+        Provides a user-friendly string representation of the message.
+        """
+        return f"SystemMessage(content='{self._content}', message_id='{self._message_id}')"
+
+    def __repr__(self):
+        """
+        Provides a detailed string for debugging purposes.
+        """
+        sanitized_content = self._content.replace("\n", "\\n")
+        return (
+            f"SystemMessage("
+            f"content='{sanitized_content}', "
+            f"embedding={self._embedding}, "
+            f"message_time='{self.message_time}', "
+            f"message_id='{self._message_id}')"
+        )
 
 class HumanMessage(PromptMessage):
 
@@ -140,6 +159,25 @@ class HumanMessage(PromptMessage):
         result.embedding = data["embedding"]
         
         return result
+    
+    def __str__(self):
+        """
+        Provides a user-friendly string representation of the message.
+        """
+        return f"SystemMessage(content='{self._content}', message_id='{self._message_id}')"
+
+    def __repr__(self):
+        """
+        Provides a detailed string for debugging purposes.
+        """
+        sanitized_content = self._content.replace("\n", "\\n")
+        return (
+            f"HumanMessage("
+            f"content='{sanitized_content}', "
+            f"embedding={self._embedding}, "
+            f"message_time='{self.message_time}', "
+            f"message_id='{self._message_id}')"
+        )
     
 class AIMessage(PromptMessage):
     def __init__(self, content: str = None, completion: Stream = None):
@@ -225,6 +263,25 @@ class AIMessage(PromptMessage):
         return result
 
         # return cls(name=data['name'], age=data['age'])
+
+    def __str__(self):
+        """
+        Provides a user-friendly string representation of the message.
+        """
+        return f"SystemMessage(content='{self._content}', message_id='{self._message_id}')"
+
+    def __repr__(self):
+        """
+        Provides a detailed string for debugging purposes.
+        """
+        sanitized_content = self._content.replace("\n", "\\n")
+        return (
+            f"AIMessage("
+            f"content='{sanitized_content}', "
+            f"embedding={self._embedding}, "
+            f"message_time='{self.message_time}', "
+            f"message_id='{self._message_id}')"
+        )
         
 # def create_message(speaker: str, text: str):
 #     message_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")

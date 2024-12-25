@@ -30,9 +30,9 @@ class ChatAgent(Operation):
         if started == False:
 
             if self.init_prompt_name is not None:
-                chat_start = PromptStarter(prompt_name=self.init_prompt_name)
+                chat_start = PromptStarter(self.init_prompt_name)
             else:
-                chat_start = PromptStarter(prompt_name=self.prompt_name)
+                chat_start = PromptStarter(self.prompt_name)
 
             if self.init_context:
                 constructor = PromptConstructor([chat_start, self.init_context])
@@ -60,7 +60,7 @@ class ChatAgent(Operation):
                 return last_message, None
 
         # main chat loop
-        chat_continue = PromptStarter(prompt_name=self.prompt_name)
+        chat_continue = PromptStarter(self.prompt_name)
         chat_summary = ContextItemAppender(prompt_name="chat-summary", item_key="chat-summary")
         chat_history = MessagesLoader(num_messages=self.num_chat_history)
         constructor = PromptConstructor([chat_continue, chat_summary, chat_history])

@@ -2,7 +2,7 @@ from datetime import datetime
 from thoughts.interfaces.messaging import PromptMessage
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import InformationExtractor, MessagesSummarizer, SessionIterator
-from thoughts.operations.prompting import ContextItemAppender, MessagesLoader, PromptAppender, PromptConstructor, PromptRunner, PromptStarter, StaticPromptLoader
+from thoughts.operations.prompting import ContextItemAppender, MessagesLoader, PromptAppender, PromptConstructor, PromptRunner, PromptStarter
 from thoughts.engine import Context
 from thoughts.engine import PipelineExecutor
 from thoughts.operations.rules import HasValue, LogicRule, RulesRunner
@@ -30,7 +30,7 @@ writer = ConsoleWriter()
 started = context.get_item("started", False)
 if started == False:
 
-    chat_start = PromptStarter(prompt_name="chat-start")
+    chat_start = PromptStarter("chat-start")
 
     chat_topic = LogicRule(
         HasValue("follow-ups"), 
@@ -48,7 +48,7 @@ else:
     writer.execute(context, last_message)
 
 # main chat loop
-chat_continue = PromptStarter(prompt_name="chat-continue")
+chat_continue = PromptStarter("chat-continue")
 chat_summary = ContextItemAppender(prompt_name="chat-summary", item_key="chat-summary")
 chat_history = MessagesLoader(num_messages=4)
 constructor = PromptConstructor([chat_continue, chat_summary, chat_history])

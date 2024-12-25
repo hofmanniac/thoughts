@@ -4,9 +4,10 @@ from thoughts.engine import Context
 from thoughts.interfaces.messaging import AIMessage
 
 class ConsoleReader(Operation):
-    def __init__(self, prompt):
+    def __init__(self, prompt, append_interaction_history = False):
         self.prompt = prompt
         self.condition = None
+        self.append_interaction_history = append_interaction_history
 
     def _debug_loop(self, context: Context):
         while True:
@@ -33,27 +34,46 @@ class ConsoleReader(Operation):
             return None, False
         elif human_message.content == "exit":
             return None, True # exit app
-        else:    
+        
+        if self.append_interaction_history:
             context.push_message(human_message)
 
         return human_message, None
 
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = "read" if "read" in json_snippet else "Ask" if "Ask" in json_snippet else "MessageReader"
+        prompt = json_snippet[moniker]
+        append_interaction_history = json_snippet.get("append_history", True)
+        return cls(prompt=prompt, append_interaction_history = append_interaction_history)
+
 class ConsoleWriter(Operation):
-    def __init__(self, text = None, typing_speed=0.03):
+    def __init__(self, text = None, typing_speed=0.03, from_item = None):
         self.text = text
         self.typing_speed = typing_speed
         self.condition = None
+        self.from_item = from_item
 
-    def execute(self, context: Context, message = None):
+    def execute(self, context: Context, message = None, from_item = None):
 
-        if self.text is None:
-            if message is not None:
+        if self.text is not None:
+            last_message = thoughts.interfaces.messaging.AIMessage(content=self.text)
+        else:
+            if self.from_item is not None:
+                last_message = context.get_item(self.from_item)
+                if type(last_message) is str:
+                    last_message = thoughts.interfaces.messaging.AIMessage(content=last_message)
+            elif message is not None:
                 last_message = message
             else:
                 last_message = context.get_last_message()
-        else:
-            last_message = thoughts.interfaces.messaging.AIMessage(content=self.text)
 
         last_message.print_content(self.typing_speed)
 
         return None, None
+    
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        from_item = json_snippet.get("from", None)
+        typing_speed = json_snippet.get("speed", 0.03)
+        return cls(from_item=from_item, typing_speed=typing_speed)

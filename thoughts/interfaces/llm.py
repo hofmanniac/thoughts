@@ -27,7 +27,7 @@ class LLM:
 
         self.max_retries = max_retries
 
-    def invoke(self, messages: list, stream = False):
+    def invoke(self, messages: list, stream = False, json=False, temperature=0.8):
 
         api_messages = []
         message: PromptMessage = None
@@ -37,6 +37,7 @@ class LLM:
 
         num_retries = 0
         completed = False
+        response_format = {"type": "json_object"} if json else None
 
         while not(completed) and num_retries <= self.max_retries:
             try:
@@ -46,13 +47,17 @@ class LLM:
                         model=self.config["model"],
                         # model="TheBloke/phi-2-GGUF",
                         messages=api_messages,
-                        temperature=0.8,
+                        temperature=temperature,
                         stream=stream,
+                        response_format=response_format
                     )
+                    
                 elif self.config["type"] == "cloud":
                     completion = self.client.chat.completions.create(
                         model = self.config["deployment"],
                         messages = api_messages,
+                        response_format=response_format,
+                        temperature=temperature,
                         stream=stream)
                 
                 completed = True
@@ -68,6 +73,14 @@ class LLM:
             ai_message = AIMessage(content = response_text)
 
         return ai_message
+    
+    def respond_to_text(self, text, stream = False):
+        system_message = SystemMessage()
+        messages = [system_message]
+        instruction = HumanMessage(content=text)
+        messages.append(instruction)
+        response = self.invoke(messages, stream)
+        return response
     
     def respond(self, prompt, stream = False):
 

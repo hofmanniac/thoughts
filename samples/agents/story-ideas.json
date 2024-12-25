@@ -1,0 +1,128 @@
+{
+    "name": "Story Ideas",
+
+    "repeat": false,
+
+    "Workflow": [
+
+        {"Thought": "History Ideas", "train": [
+            {"Role": "You are a history buff."},
+            {"Instruction": "List 3 events from history based on today's date of August 15th."}
+        ]},
+
+        {"Thought": "Literary Ideas", "train": [
+            {"Role": "You are a classical literature expert."},
+            {"Instruction": "Choose a random word in relation to August 15th. List 3 random classical novels or stories that have to do with that word."}
+        ]},
+
+        {"Thought": "Story Premises", "train": [
+            {"Role": "You help create ideas for science fiction stories, by combining ideas from history and classical literature."},
+            {"History": true},
+            {"Instruction": "Create 3-5 story ideas by randomly combining the historical events with the works of literature. Change the setting, nations, and characters to a science fiction context."}
+        ]},
+
+        {"Thought": "Story Premise", "train": [
+            {"Role": "You help choose compelling science fiction story ideas."},
+            {"History": 1},
+            {"Instruction": "Choose a single idea from the story ideas provided. Restate the premise. Comment on how this idea could be ehanced or expanded."}
+        ]},
+
+        {"Thought": "Plot Beats", "train": [
+            {"Role": "You create plot beats for science fiction stories."},
+            {"History": 1},
+            {"Instruction": "Create 'Save the Cat' plot beats for the provided story premise."}
+        ]}
+    ],
+
+    "Archive-Workflow": [
+        
+        {"Task": "Brainstorm and Summarize", "repeat": false, "steps": [
+            
+            {
+                "Think": "Story Premises",
+                "role": "You help create ideas for science fiction stories, by combining ideas from history and classical literature.",
+                "instruction": "Create 3-5 story ideas by combining the following items.",
+                "context": "History Ideas: {History Ideas}, Literary Ideas: {Literary Ideas}"
+            },
+
+            {
+                "Think": "Story Premise",
+                "role": "You help choose compelling science fiction story ideas.",
+                "message": "{Story Premises}",
+                "instruction": "Choose a single idea from the story ideas provided. Restate the premise. Comment on how this idea could be ehanced or expanded."
+            },
+
+            {
+                "Think": "Plot Beats",
+                "role": "You create plot beats for science fiction stories.",
+                "message": "{Story Premise}",
+                "instruction": "Create 'Save the Cat' plot beats for the provided story premise."
+            }
+        ]}
+    ], 
+
+    "Archive": [
+
+        {"Task": "Brainstorm and Summarize", "repeat": false, "steps": [
+            
+            {"Task": "Brainstorm", "maxRuns": 1, "steps": [
+                {
+                    "Think": "History Ideas", 
+                    "role": "You are a history buff.",
+                    "instruction": "List 3 events from history based on today's date of August 15th."
+                },
+                {
+                    "Think": "Literary Ideas", 
+                    "role": "You are a classical literature expert.",
+                    "instruction": "Choose a random word in relation to August 15th. List 3 random classical novels or stories that have to do with that word."
+                }
+            ]},
+
+            {
+                "Think": "Story Premises",
+                "role": "You help create ideas for science fiction stories, by combining ideas from history and classical literature.",
+                "instruction": "Create 3-5 story ideas by combining the items in the conversation above."
+            },
+
+            {
+                "Think": "Story Premise",
+                "role": "You help choose compelling science fiction story ideas.",
+                "instruction": "Choose a single idea from the story ideas provided. Restate the premise. Comment on how this idea could be ehanced or expanded."
+            },
+
+            {
+                "Think": "Plot Beats",
+                "role": "You create plot beats for science fiction stories.",
+                "instruction": "Create 'Save the Cat' plot beats for the provided story premise."
+            }
+        ]},
+
+        {"Task": "Brainstorm", "maxRuns": 2, "steps": [
+            {
+                "Think": "History Ideas", 
+                "role": "You help create ideas for science fiction stories. Your expertise is in historical events.",
+                "behavior": "Riff off of the other person's ideas by randomly combining the historical events with the classical novels or stories, adding historical details from the events you listed.",
+                "start": "List 3 events from history based on today's date of {today}."
+            },
+            {
+                "Think": "Literary Ideas", 
+                "role": "You help create ideas for science fiction stories. Your expertise is in classical literature.",
+                "behavior": "Riff off of the other person's ideas by adding details from the stories you listed to further develop the ideas.",
+                "start": "Choose a random word in relation to {today}. List 3 random classical novels or stories that have to do with that word."
+            }
+        ]},
+
+        {
+            "Think": "Story Premise",
+            "role": "You help summarize ideas for science fiction stories.",
+            "instruction": "Choose and summarize a story premise from the conversation."
+        },
+
+        {
+            "Think": "Plot Beats",
+            "role": "You create plot beats for science fiction stories.",
+            "instruction": "Create 'Save the Cat' plot beats for the provided story premise.",
+            "context": "Story Premise: {Story Premise}"
+        }
+    ]
+}
