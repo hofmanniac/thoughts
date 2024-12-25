@@ -10,6 +10,7 @@ memory
 __pycache__
 /rules
 samples/private
+examples/private
 /temp
 /thoughts.code-workspace
 /thoughts.egg-info
