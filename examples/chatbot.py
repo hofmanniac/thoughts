@@ -2,7 +2,7 @@ from datetime import datetime
 from thoughts.interfaces.messaging import PromptMessage
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import InformationExtractor, MessagesSummarizer, SessionIterator
-from thoughts.operations.prompting import ContextItemAppender, MessagesLoader, PromptAppender, PromptConstructor, PromptRunner, PromptStarter
+from thoughts.operations.prompting import ContextItemAppender, AppendHistory, IncludeContext, PromptConstructor, PromptRunner, Role
 from thoughts.engine import Context
 from thoughts.engine import PipelineExecutor
 from thoughts.operations.rules import HasValue, LogicRule, RulesRunner
@@ -21,7 +21,7 @@ from thoughts.operations.rules import HasValue, LogicRule, RulesRunner
 #     return "\n".join(results)
 
 session_id = datetime.now().strftime("%Y-%m-%d")
-context = Context(prompt_path="chat", session_id=session_id)
+context = Context(content_path="chat", session_id=session_id)
 
 reader = ConsoleReader("YOU:")
 writer = ConsoleWriter()
@@ -30,12 +30,12 @@ writer = ConsoleWriter()
 started = context.get_item("started", False)
 if started == False:
 
-    chat_start = PromptStarter("chat-start")
+    chat_start = Role("chat-start")
 
     chat_topic = LogicRule(
         HasValue("follow-ups"), 
         [ContextItemAppender(prompt_name="chat-followups", item_key="follow-ups")], 
-        [PromptAppender(prompt_name="chat-new")])
+        [IncludeContext(prompt_name="chat-new")])
 
     constructor = PromptConstructor([chat_start, chat_topic])
     runner = PromptRunner(prompt_constructor=constructor)
@@ -48,9 +48,9 @@ else:
     writer.execute(context, last_message)
 
 # main chat loop
-chat_continue = PromptStarter("chat-continue")
+chat_continue = Role("chat-continue")
 chat_summary = ContextItemAppender(prompt_name="chat-summary", item_key="chat-summary")
-chat_history = MessagesLoader(num_messages=4)
+chat_history = AppendHistory(num_messages=4)
 constructor = PromptConstructor([chat_continue, chat_summary, chat_history])
 runner = PromptRunner(prompt_constructor=constructor)
 summarizer = MessagesSummarizer("chat-summarize", 4, "chat-summary")

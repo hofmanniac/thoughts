@@ -1,10 +1,10 @@
 from thoughts.operations.core import Operation
 import thoughts.interfaces.messaging
-from thoughts.engine import Context
-from thoughts.interfaces.messaging import AIMessage
+from thoughts.context import Context
 
 class ConsoleReader(Operation):
-    def __init__(self, prompt, append_interaction_history = False):
+    monikers = ["ConsoleReader", "Ask"]
+    def __init__(self, prompt, append_interaction_history = True):
         self.prompt = prompt
         self.condition = None
         self.append_interaction_history = append_interaction_history
@@ -74,6 +74,7 @@ class ConsoleWriter(Operation):
     
     @classmethod
     def parse_json(cls, json_snippet, config):
+        # moniker = "Ask" if "Ask" in json_snippet else "MessageWriter"
         from_item = json_snippet.get("from", None)
         typing_speed = json_snippet.get("speed", 0.03)
         return cls(from_item=from_item, typing_speed=typing_speed)

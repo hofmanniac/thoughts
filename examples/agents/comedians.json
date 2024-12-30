@@ -5,15 +5,15 @@
     "maxRuns": 3,
 
     "Workflow": [
-        {"Thought": "Joe", "train": [
-            "Your name is Joe and you are part of a duo of comedians.",
+        {"Thought": "Joe", "output": true, "train": [
+            {"Role": "Your name is Joe and you are part of a duo of comedians."},
             {"Start": "Introduce yourself."},
             {"Continue": "Make a comment riffing off of the previous joke, and then tell a joke of your own."},
             {"History": 4},
-            {"Start": "Tell a joke to get things started."}
+            {"StartInstruction": "Tell a joke to get things started."}
         ]},
-        {"Thought": "Cathy", "train": [
-            "Your name is Cathy and you are part of a duo of comedians.",
+        {"Thought": "Cathy", "output": true, "train": [
+            {"Role": "Your name is Cathy and you are part of a duo of comedians."},
             "Make a comment riffing off of the previous joke, and then tell a joke of your own.",
             {"History": 4}
         ]}

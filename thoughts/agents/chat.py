@@ -1,7 +1,7 @@
 from thoughts.operations.core import Operation
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import MessagesSummarizer
-from thoughts.operations.prompting import ContextItemAppender, MessagesLoader, PromptConstructor, PromptRunner, PromptStarter
+from thoughts.operations.prompting import ContextItemAppender, AppendHistory, PromptConstructor, PromptRunner, Role
 from thoughts.engine import Context
 from thoughts.engine import PipelineExecutor
 
@@ -30,9 +30,9 @@ class ChatAgent(Operation):
         if started == False:
 
             if self.init_prompt_name is not None:
-                chat_start = PromptStarter(self.init_prompt_name)
+                chat_start = Role(self.init_prompt_name)
             else:
-                chat_start = PromptStarter(self.prompt_name)
+                chat_start = Role(self.prompt_name)
 
             if self.init_context:
                 constructor = PromptConstructor([chat_start, self.init_context])
@@ -60,9 +60,9 @@ class ChatAgent(Operation):
                 return last_message, None
 
         # main chat loop
-        chat_continue = PromptStarter(self.prompt_name)
+        chat_continue = Role(self.prompt_name)
         chat_summary = ContextItemAppender(prompt_name="chat-summary", item_key="chat-summary")
-        chat_history = MessagesLoader(num_messages=self.num_chat_history)
+        chat_history = AppendHistory(num_messages=self.num_chat_history)
         constructor = PromptConstructor([chat_continue, chat_summary, chat_history])
         runner = PromptRunner(prompt_constructor=constructor)
         summarizer = MessagesSummarizer(

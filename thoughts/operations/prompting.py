@@ -3,8 +3,49 @@ from thoughts.operations.console import ConsoleWriter
 from thoughts.operations.core import Operation
 import thoughts.interfaces.prompting
 from thoughts.engine import Context
-from thoughts.operations.memory import ContextMemoryAppender, MemoryKeeper
+# from thoughts.operations.memory import ContextMemoryAppender, MemoryKeeper
 from thoughts.util import convert_to_list
+
+from enum import Enum, auto
+
+class RunCondition(Enum):
+    ALWAYS = auto()
+    CONTINUATION = auto()
+    START = auto()
+
+def should_execute(context: Context, run_condition: RunCondition):
+    if run_condition == RunCondition.ALWAYS:
+        return True
+    elif run_condition == RunCondition.CONTINUATION and context.messages:
+        return True
+    elif run_condition == RunCondition.START and not context.messages:
+        return True
+    return False
+
+def format_content(content):
+    if isinstance(content, list):
+        return "\n".join(format_content(item) for item in content)
+    elif isinstance(content, dict):
+        return ", ".join(f"{k}: {format_content(v)}" for k, v in content.items())
+    elif isinstance(content, str):
+        return content
+    else:
+        return str(content)
+
+def get_first_moniker(json_snippet, monikers):
+    return next(moniker for moniker in monikers if moniker in json_snippet)  
+
+def create_moniker_mapping(base_class):
+    moniker_mapping = {}
+    
+    def add_subclasses(cls):
+        for subclass in cls.__subclasses__():
+            for moniker in getattr(subclass, 'monikers', []):
+                moniker_mapping[moniker] = subclass
+            add_subclasses(subclass)
+    
+    add_subclasses(base_class)
+    return moniker_mapping
 
 class DictFormatter(dict):
     def __missing__(self, key):
@@ -17,26 +58,17 @@ class DictFormatter(dict):
             return ', '.join(f"{k}: {v}" for k, v in value.items())
         return value
 
-class PromptStarter(Operation):
-    """
-    Start a new prompt. Defaults to a SystemMessage if no role is supplied.
-
-    - If prompt_name is provided, loads the prompt from the template specified in prompt_name.
-    - IF prompt_name is not provied, uses the content. 
-    - If content is not provided, uses the default "You are a helpful AI assistant." prompt.
-
-    Returns a single message in a list, for subsequent operations to append to.
-    """
-    def __init__(self, prompt_name: str = None, role: str = "system", content: str = "You are a helpful AI assistant."):
+class MessageStarter(Operation):
+    def __init__(self, role: str, content: str = None, file: str = None):
         self.condition = None
         self.role = role
-        self.prompt_name = prompt_name
+        self.file = file
         self.content = content
     def execute(self, context: Context, messages = None):
         
-        if self.prompt_name is not None:
-            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
-            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+        if self.file is not None:
+            base_path = context.content_path + "/" if context.content_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.file)
             content = prompt["content"]
         else:
             content = self.content
@@ -56,64 +88,163 @@ class PromptStarter(Operation):
     @classmethod
     def parse_json(cls, json_snippet, config):
         if type(json_snippet) is str:
+            return cls(role="human", content=json_snippet)
+        elif type(json_snippet) is dict:
+            moniker = "AIMessage" if "AIMessage" in json_snippet else "HumanMessage" if "HumanMessage" in json_snippet else "MessageStarter"
+            if moniker == "AIMessage":
+                role = "ai"
+            elif moniker == "HumanMessage":    
+                role = "human"
+            elif moniker == "SystemMessage":
+                role = "system" 
+            else:
+                role = json_snippet.get("role", "human")
+            return cls(role=role, content=json_snippet[moniker])
+    
+class Role(Operation):
+    """
+    Start a new prompt.
+
+    - If file is provided, loads the prompt from the template specified in prompt_name.
+    - IF file is not provied, uses the content. 
+    - If content is not provided, uses the default "You are a helpful AI assistant." prompt.
+
+    Returns a single message in a list, for subsequent operations to append to.
+    """
+    monikers = ["Role"]
+    def __init__(self, content: str = "You are a helpful AI assistant.", file: str = None):
+        self.condition = None
+        self.content = content
+        self.file = file
+    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+        if not should_execute(context, run_condition):
+            return messages, None
+        message_starter = MessageStarter(role="system", content=self.content, file=self.file)
+        return message_starter.execute(context, messages)
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        if type(json_snippet) is str:
             return cls(content=json_snippet)
         elif type(json_snippet) is dict:
-            moniker = "start" if "start" in json_snippet else "PromptStarter"
-            return cls(content=json_snippet[moniker])
+            moniker = get_first_moniker(json_snippet, cls.monikers)
+            file = json_snippet.get("file", None)
+            return cls(content=json_snippet[moniker], file=file)
         return None
     
-class PromptAppender(Operation):
-    def __init__(self, prompt_name: str = None, content: str = None):
+class StartRole(Role):
+    monikers = ["StartRole"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, RunCondition.START)
+    
+class ContinueRole(Role):
+    monikers = ["ContinueRole"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, RunCondition.CONTINUATION)
+    
+class IncludeContext(Operation):
+    monikers = ["Context", "IncludeContext"]
+    def __init__(self, title: str = None, content: str = None, from_item: str = None, file: str = None ):
         self.condition = None
-        self.prompt_name = prompt_name
+        self.title = title
         self.content = content
-    def execute(self, context: Context, messages = None):
-        if not messages:
+        self.from_item = from_item
+        self.file = file
+    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+
+        if not messages or not should_execute(context, run_condition):         
             return messages, None
         
         prompt_message: PromptMessage = messages[-1] if messages else None
     
+        content = None
         if self.content is not None:
-            content = self.content
-        else:
-            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
-            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
+            content = format_content(self.content)
+        elif self.from_item is not None:
+            content = context.get_item(self.from_item)
+            content = format_content(content)
+        elif self.file is not None:
+            base_path = context.content_path + "/" if context.content_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.file)
             content = prompt["content"]
 
-        prompt_message.content += content + " "
+        if self.title is not None and content is None:
+            content = self.title
+        elif self.title is not None:
+            content = self.title + ":\n" + content
+            
+        prompt_message.content += "\n\n" + content
         return messages, None
-
     @classmethod
     def parse_json(cls, json_snippet, config):
-        return cls(content=json_snippet)
+        moniker = get_first_moniker(json_snippet, cls.monikers)
+        title = json_snippet.get(moniker, None)
+        content = json_snippet.get("content", None)
+        from_item = json_snippet.get("key", None)
+        file = json_snippet.get("file", None)
+        if content is None and title is not None:
+            content = title
+            title = None
+        return cls(title=title, content=content, from_item=from_item, file=file)
 
-class MessageAppender(Operation):
-    def __init__(self, prompt_name: str = None, content: str = None):
-        self.condition = None
-        self.prompt_name = prompt_name
-        self.content = content
-    def execute(self, context: Context, messages = None):
-        if not messages:
-            messages = []
+class StartContext(IncludeContext):
+    monikers = ["Start", "StartContext"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, RunCondition.START)
         
-        if self.content is not None:
-            content = self.content
-        else:
-            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
-            prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
-            content = prompt["content"]
-
-        prompt_message = HumanMessage(content=content)
-        messages.append(prompt_message)
-        return messages, None
-
+class ContinueContext(IncludeContext):
+    monikers = ["Continue", "ContinueContext"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, RunCondition.CONTINUATION)
+    
+class IncludeItem(IncludeContext):
+    monikers = ["Item", "IncludeItem"]
+    def __init__(self, title: str = None, key: str = None):
+        if key is None:
+            key = title
+            title = None
+        super().__init__(title=title, from_item=key)
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = "instruct" if "instruct" in json_snippet else "MessageAppender"
-        content=json_snippet[moniker]
-        return cls(content=content)
+        moniker = get_first_moniker(json_snippet, cls.monikers)
+        title = json_snippet.get(moniker, None)
+        key = json_snippet.get("key", None)
+        return cls(title=title, key=key)
+    
+class ContinueItem(IncludeItem):
+    monikers = ["ContinueItem"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    
+class StartItem(IncludeItem):
+    monikers = ["StartItem"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.START)
+    
+class IncludeFile(IncludeContext):
+    monikers = ["File", "IncludeFile"]
+    def __init__(self, title: str = None, file: str = None):
+        if file is None:
+            file = title
+            title = None
+        super().__init__(title=title, file=file)
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = get_first_moniker(json_snippet, cls.monikers)
+        title = json_snippet.get(moniker, None)
+        file = json_snippet.get("file", None)
+        return cls(title=title, file=file)
+    
+class ContinueFile(IncludeFile):
+    monikers = ["ContinueFile"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    
+class StartFile(IncludeFile):
+    monikers = ["StartFile"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.START)
 
-class MessagesLoader(Operation):
+class IncludeHistory(Operation):
     """
     Loads a specified number of recent messages from the context's message history 
     and appends them to an existing list of messages.
@@ -133,10 +264,11 @@ class MessagesLoader(Operation):
             - The updated list of messages including the loaded message history.
             - None (placeholder for additional return data, unused in this implementation).
     """
+    monikers = ["History", "IncludeHistory"]
     def __init__(self, num_messages: int = 4):
         self.condition = None
         self.num_messages = num_messages
-    def execute(self, context: Context, messages = None):
+    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
         message_history = context.peek_messages(self.num_messages)
         if messages is None:
             messages = []
@@ -144,9 +276,60 @@ class MessagesLoader(Operation):
         return messages, None
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = "history" if "history" in json_snippet else "MessagesLoader"
+        moniker = get_first_moniker(json_snippet, cls.monikers)
         return cls(num_messages=json_snippet[moniker])
     
+class StartHistory(IncludeHistory):
+    momikers = ["StartHistory"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.START)
+    
+class ContinueHistory(IncludeHistory):
+    monikers = ["ContinueHistory"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    
+class Instruction(Operation):
+    monikers = ["Instruction", "IncludeInstruction"]
+    def __init__(self, content: str = None, file: str = None):
+        self.condition = None
+        self.content = content
+        self.file = file
+    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+        
+        if not should_execute(context, run_condition):       
+            return messages, None
+        
+        if not messages:
+            messages = []
+        
+        if self.content is not None:
+            content = self.content
+        else:
+            base_path = context.content_path + "/" if context.content_path is not None else ""
+            prompt = thoughts.interfaces.prompting.load_template(base_path + self.file)
+            content = prompt["content"]
+
+        prompt_message = HumanMessage(content=content)
+        messages.append(prompt_message)
+        return messages, None
+
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        moniker = get_first_moniker(json_snippet, cls.monikers)
+        content = json_snippet.get(moniker, None)
+        return cls(content=content)
+
+class StartInstruction(Instruction):
+    monikers = ["StartInstruction"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.START)
+    
+class ContinueInstruction(Instruction):
+    monikers = ["ContinueInstruction"]
+    def execute(self, context: Context, messages=None):
+        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+
 class MessagesBatchAdder(Operation):
     def __init__(self, batch_size: int = 4, exclude_ids: list = [], allow_partial_batch: bool = False):
         self.batch_size = batch_size
@@ -226,7 +409,7 @@ class ContextItemAppender(Operation):
         
         # load the static content
         if self.prompt_name:
-            base_path = context.prompt_path + "/" if context.prompt_path is not None else ""
+            base_path = context.content_path + "/" if context.content_path is not None else ""
             prompt = thoughts.interfaces.prompting.load_template(base_path + self.prompt_name)
             prompt_message.content += prompt["content"]
         
@@ -288,8 +471,75 @@ class PromptConstructor(Operation):
         operation: Operation
         messages = []
         for operation in self.operations:
+            if type(operation) is str:
+                operation = IncludeContext(content=operation)
             messages, control = operation.execute(context, messages)
         return messages, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        ops = json_snippet
+        operations = []
+
+        moniker_mapping = create_moniker_mapping(Operation)
+
+        for op in ops:
+            operation = None
+            
+            if isinstance(op, str):
+                operation = IncludeContext(title=None, content=op)
+            else:
+                moniker = get_first_moniker(op, moniker_mapping.keys())
+                operation_class = moniker_mapping.get(moniker)
+                if operation_class:
+                    operation = operation_class.parse_json(op, config)
+
+            # if type(op) is str:
+            #     operation = IncludeContext(title=None, content=op)
+            
+            # elif "Role" in op:
+            #     operation = Role.parse_json(op, config)
+            # elif "ContinueRole" in op:
+            #     operation = ContinueRole.parse_json(op, config)
+            # elif "StartRole" in op:
+            #     operation = StartRole.parse_json(op, config)
+
+            # elif "Context" in op or "InlcudeContext" in op:
+            #     operation = IncludeContext.parse_json(op, config)
+            # elif "ContinueContext" in op:
+            #     operation = ContinueContext.parse_json(op, config)
+            # elif "StartContext" in op:
+            #     operation = StartContext.parse_json(op, config)
+
+            # elif "Item" in op or "IncludeItem" in op:
+            #     operation = IncludeItem.parse_json(op, config)
+            # elif "ContinueItem" in op:
+            #     operation = ContinueItem.parse_json(op, config)
+            # elif "StartItem" in op:
+            #     operation = StartItem.parse_json(op, config)
+
+            # elif "File" in op or "IncludeFile" in op:
+            #     operation = IncludeFile.parse_json(op, config)
+            # elif "ContinueFile" in op:
+            #     operation = ContinueFile.parse_json(op, config)
+            # elif "StartFile" in op:
+            #     operation = StartFile.parse_json(op, config)
+
+            # elif "History" in op or "IncludeHistory" in op:
+            #     operation = IncludeHistory.parse_json(op, config)
+            # elif "ContinueHistory" in op:
+            #     operation = ContinueHistory.parse_json(op, config)
+            # elif "StartHistory" in op:
+            #     operation = StartHistory.parse_json(op, config)
+
+            # elif "Instruction" in op:
+            #     operation = StartInstruction.parse_json(op, config)
+            # elif "ContinueInstruction" in op:
+            #     operation = ContinueInstruction.parse_json(op, config)
+            # elif "StartInstruction" in op:
+            #     operation = StartInstruction.parse_json(op, config)
+                
+            operations.append(operation)
+        return cls(operations=operations)
           
 class PromptRunner(Operation):
     """
@@ -352,7 +602,7 @@ class PromptRunner(Operation):
         
         # construct the main (system) prompt
         if self.prompt_constructor is None:
-            prompt_starter = PromptStarter(self.prompt_name)
+            prompt_starter = Role(self.prompt_name)
             prompt_constructor = PromptConstructor([prompt_starter])
         else:
             prompt_constructor = self.prompt_constructor
@@ -410,22 +660,22 @@ class PromptRunner(Operation):
         def add_nodes(items, start_node_defined):
             for item in items:
                 if type(item) is dict and "instruct" in item or "MessageAppender" in item:
-                    op = MessageAppender.parse_json(item, config)
-                elif type(item) is dict and "remember" in item or "MemoryKeeper" in item:
-                    op = MemoryKeeper.parse_json(item, config)
-                elif type(item) is dict and "recall" in item or "ContextMemoryAppender" in item:
-                    op = ContextMemoryAppender.parse_json(item, config)
+                    op = Instruction.parse_json(item, config)
+                # elif type(item) is dict and "remember" in item or "MemoryKeeper" in item:
+                #     op = MemoryKeeper.parse_json(item, config)
+                # elif type(item) is dict and "recall" in item or "ContextMemoryAppender" in item:
+                #     op = ContextMemoryAppender.parse_json(item, config)
                 elif type(item) is dict and "start" in item or "PromptStarter" in item:
                     nodes.clear()
-                    op = PromptStarter.parse_json(item, config)
+                    op = Role.parse_json(item, config)
                     start_node_defined = True
                 elif type(item) is dict and "history" in item or "MessagesLoader" in item:
-                    op = MessagesLoader.parse_json(item, config)
+                    op = IncludeHistory.parse_json(item, config)
                 elif not start_node_defined:
-                    op = PromptStarter.parse_json(item, config)
+                    op = Role.parse_json(item, config)
                     start_node_defined = True
                 else:
-                    op = PromptAppender.parse_json(item, config)
+                    op = IncludeContext.parse_json(item, config)
                 nodes.append(op)
             return start_node_defined
 

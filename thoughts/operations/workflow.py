@@ -2,7 +2,7 @@ from thoughts.context import Context
 from thoughts.operations.core import Operation
 from thoughts.operations.thought import Thought, AnalyzeMessages
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
-from thoughts.operations.memory import MemoryKeeper, PromptRunner, TextSplitter
+from thoughts.operations.memory import MemoryKeeper, TextSplitter
 
 class Node:
     def __init__(self, name: str, operation: Operation, condition=None):
@@ -142,33 +142,33 @@ class PipelineExecutor:
 
         nodes = []
 
-        moniker = "do" if "do" in json_snippet else "Workflow" if "Workflow" in json_snippet else "steps" if "steps" in json_snippet else "PipelineExecutor"
+        moniker = "Workflow" if "Workflow" in json_snippet else "PipelineExecutor"
 
         for item in json_snippet[moniker]:
-            if "think" in item or "PromptRunner" in item:
-                nodes.append(PromptRunner.parse_json(item, config))
-            elif "communicate" in item:
-                nodes.append(PromptRunner.parse_json(item, config))
-                nodes.append(ConsoleWriter.parse_json(item, config))
-            elif "do" in item or "PipelineExecutor" in item or "Task" in item:
-                nodes.append(PipelineExecutor.parse_json(context, item, config))
-            elif "read" in item or "MessageReader" in item or "Ask" in item:
+            if "MessageReader" in item or "Ask" in item:
                 nodes.append(ConsoleReader.parse_json(item, config))
-            elif "write" in item or "MessageWriter" in item:
+            elif "MessageWriter" in item or "Write" in item:
                 nodes.append(ConsoleWriter.parse_json(item, config))
-            elif "remember" in item:
-                prompt_runner = PromptRunner.parse_json(item, config)
-                prompt_runner.append_history = False # internal thought vs. communication
-                nodes.append(prompt_runner)
-                nodes.append(MemoryKeeper.parse_json(item, config))
-            elif "MemoryKeeper" in item:
-                nodes.append(MemoryKeeper.parse_json(item, config))
-            elif "TextSplitter" in item:
-                nodes.append(TextSplitter.parse_json(item, config))
-            elif "Analyze" in item:
-                nodes.append(AnalyzeMessages.parse_json(item, config))
             elif "Thought" in item:
                 nodes.append(Thought.parse_json(item, config))
+            # if "think" in item or "PromptRunner" in item:
+            #     nodes.append(PromptRunner.parse_json(item, config))
+            # elif "communicate" in item:
+            #     nodes.append(PromptRunner.parse_json(item, config))
+            #     nodes.append(ConsoleWriter.parse_json(item, config))
+            # elif "do" in item or "PipelineExecutor" in item or "Task" in item:
+            #     nodes.append(PipelineExecutor.parse_json(context, item, config))
+            # elif "remember" in item:
+            #     prompt_runner = PromptRunner.parse_json(item, config)
+            #     prompt_runner.append_history = False # internal thought vs. communication
+            #     nodes.append(prompt_runner)
+            #     nodes.append(MemoryKeeper.parse_json(item, config))
+            # elif "MemoryKeeper" in item:
+            #     nodes.append(MemoryKeeper.parse_json(item, config))
+            # elif "TextSplitter" in item:
+            #     nodes.append(TextSplitter.parse_json(item, config))
+            # elif "Analyze" in item:
+            #     nodes.append(AnalyzeMessages.parse_json(item, config))
             # elif "recall" in item or "ContextMemoryAppender" in item:
             #     nodes.append(ContextMemoryAppender.parse_json(item, config))
             else:

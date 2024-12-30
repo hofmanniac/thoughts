@@ -150,10 +150,10 @@ def semantic_memory():
 
 def main():
 
-    agent1_context = Context(prompt_path="chat")
+    agent1_context = Context(content_path="chat")
     agent1 = ChatAgent(context=agent1_context, prompt_name="chat-continue", handle_io=False)
 
-    agent2_context = Context(prompt_path="prompts")
+    agent2_context = Context(content_path="prompts")
     agent2 = ChatAgent(context=agent2_context, prompt_name="pirate", handle_io=False)
 
     st.title("My First Streamlit App")

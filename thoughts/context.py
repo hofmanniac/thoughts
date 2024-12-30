@@ -5,7 +5,7 @@ from time import time
 import json
 import os
 
-from thoughts import unification
+from thoughts import unification, util
 from thoughts.interfaces.llm import LLM
 from thoughts.interfaces.memory import Memory, MemoryModule
 from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage
@@ -19,7 +19,7 @@ class CustomEncoder(json.JSONEncoder):
 class Context:
 
     def __init__(self, llm: LLM = None, memory: Memory = None, 
-                 prompt_path: str = None, session_id: str = None, persist_session: bool = True, debug: bool = False):
+                 content_path: str = None, session_id: str = None, persist_session: bool = True, debug: bool = False):
         
         self.items = {}
         self.llm = llm if llm is not None else LLM()
@@ -35,7 +35,7 @@ class Context:
             self._load()
 
         # run these after the load to override with the values passed in
-        self.prompt_path = prompt_path
+        self.content_path = content_path
         self.persist_session = persist_session
     
     def _object_hook(self, data):
@@ -52,7 +52,9 @@ class Context:
             return
         
         # save the manifest to the root
-        manifest = {"prompt-path": self.prompt_path, "persist-session": self.persist_session}
+        # manifest = {"prompt-path": self.content_path, "persist-session": self.persist_session}
+        manifest = {"content-path": self.content_path, "persist-session": self.persist_session}
+
         directory_path = "memory/sessions/" + self.session_id
         os.makedirs(directory_path, exist_ok=True)
         with open(os.path.join(directory_path, "manifest.json"), "w") as f:
@@ -73,7 +75,7 @@ class Context:
         directory_path = "memory/sessions/" + self.session_id
         with open(os.path.join(directory_path, "manifest.json"), "r") as f:
             manifest = json.load(f)
-        self.prompt_path = manifest["prompt-path"]
+        self.content_path = manifest["prompt-path"]
         self.persist_session = manifest["persist-session"]
 
     def _load(self):
