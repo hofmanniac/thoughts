@@ -8,7 +8,7 @@ import uuid
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
-from thoughts.engine import Context, PipelineExecutor
+from thoughts.agent import Context, PipelineExecutor
 import logging, warnings
 from typing import List
 from thoughts.operations.prompting import ContextItemAppender, IncludeContext, PromptRunner, Role

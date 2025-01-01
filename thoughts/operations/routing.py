@@ -1,4 +1,4 @@
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.interfaces.messaging import SystemMessage
 from thoughts.operations.core import Operation
 

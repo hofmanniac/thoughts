@@ -17,7 +17,7 @@ class GraphExecutor:
     def __init__(self, context = None):
         self.nodes = {}
         self.edges = {}
-        self.context = context if context is not None else Context()
+        # self.context = context if context is not None else Context()
 
     def add_node(self, name, operation, condition=None):
         if name in self.nodes:
@@ -35,26 +35,26 @@ class GraphExecutor:
 
     def execute(self, start_node_name, context=None, message=None):
 
-        if context is not None:
-            self.context = context
+        # if context is not None:
+        #     self.context = context
 
         if start_node_name not in self.nodes:
             raise ValueError("Start node must exist in the graph.")
         
         current_node: Node = self.nodes[start_node_name]
         while current_node:
-            if not current_node.condition or current_node.condition(self.context):
-                message, control = current_node.execute(self.context, message)
+            if not current_node.condition or current_node.condition(context):
+                message, control = current_node.execute(context, message)
                 # print(f"Output of {current_node.operation}: {context.data}")
             next_node = None
             for node_name, condition in self.edges.get(current_node.name, []):
                 node = self.nodes[node_name]
-                if condition is None or condition(self.context):
+                if condition is None or condition(context):
                     next_node = node
                     break
             current_node = next_node
 
-class PipelineExecutor:
+class PipelineExecutor(Operation):
     """
     PipelineExecutor is a class designed to execute a sequence of nodes (operations) in a defined order.
 
@@ -70,9 +70,9 @@ class PipelineExecutor:
     - If the loop flag is set to True, the execution will restart from the first node after reaching the end.
     - The execution stops if a node returns a control value of False, unless the loop flag is set to True.
     """
-    def __init__(self, nodes=[], context = None, loop = False, max_runs = None):
+    def __init__(self, name: str = None, nodes=[], loop = False, max_runs = None):
+        self.name = name
         self.nodes = nodes
-        self.context = context if context is not None else Context()
         self.loop = loop
         self.condition = None
         self.max_runs = max_runs
@@ -80,9 +80,6 @@ class PipelineExecutor:
     def execute(self, context: Context = None, message = None):
 
         context.logger("PipelineExecutor: Start", "cyan")
-
-        if context is not None:
-            self.context = context
         
         if self.nodes is None:
             return None, None
@@ -113,8 +110,8 @@ class PipelineExecutor:
             # run the next operation
             current_node: Node = self.nodes[idx]
             context.logger("\t" + type(current_node).__name__, "cyan")
-            if not current_node.condition or current_node.condition(self.context):
-                result, control = current_node.execute(self.context, result)
+            if not current_node.condition or current_node.condition(context):
+                result, control = current_node.execute(context, result)
                 if result is not None:
                     results.append(result)
                 if control is not None and control == False:
@@ -132,7 +129,9 @@ class PipelineExecutor:
         return results, None
     
     @classmethod
-    def parse_json(cls, context, json_snippet, config):
+    def parse_json(cls, json_snippet, config):
+
+        name = json_snippet.get("Task", None)
 
         # repeat = json_snippet.get("repeat", 0) if type(json_snippet) is dict else 0
         repeat = json_snippet.get("repeat", False)
@@ -142,9 +141,7 @@ class PipelineExecutor:
 
         nodes = []
 
-        moniker = "Workflow" if "Workflow" in json_snippet else "PipelineExecutor"
-
-        for item in json_snippet[moniker]:
+        for item in json_snippet["steps"]:
             if "MessageReader" in item or "Ask" in item:
                 nodes.append(ConsoleReader.parse_json(item, config))
             elif "MessageWriter" in item or "Write" in item:
@@ -156,8 +153,8 @@ class PipelineExecutor:
             # elif "communicate" in item:
             #     nodes.append(PromptRunner.parse_json(item, config))
             #     nodes.append(ConsoleWriter.parse_json(item, config))
-            # elif "do" in item or "PipelineExecutor" in item or "Task" in item:
-            #     nodes.append(PipelineExecutor.parse_json(context, item, config))
+            elif "PipelineExecutor" in item or "Task" in item:
+                nodes.append(PipelineExecutor.parse_json(item, config))
             # elif "remember" in item:
             #     prompt_runner = PromptRunner.parse_json(item, config)
             #     prompt_runner.append_history = False # internal thought vs. communication
@@ -175,4 +172,4 @@ class PipelineExecutor:
                 # raise ValueError(f"Unknown component in PipelineExecutor: {item}")
                 print(f"Warning: Unknown component in PipelineExecutor: {item}")
             
-        return cls(context=context, nodes=nodes, loop=repeat, max_runs=max_runs)
+        return cls(name=name, nodes=nodes, loop=repeat, max_runs=max_runs)

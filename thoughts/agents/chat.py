@@ -2,8 +2,8 @@ from thoughts.operations.core import Operation
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import MessagesSummarizer
 from thoughts.operations.prompting import ContextItemAppender, AppendHistory, PromptConstructor, PromptRunner, Role
-from thoughts.engine import Context
-from thoughts.engine import PipelineExecutor
+from thoughts.context import Context
+from thoughts.agent import PipelineExecutor
 
 class ChatAgent(Operation):
 

@@ -11,7 +11,7 @@ from time import sleep
 import streamlit as st
 
 from thoughts.agents.chat import ChatAgent
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.interfaces.messaging import HumanMessage
 import streamlit.components.v1 as components
 import networkx as nx

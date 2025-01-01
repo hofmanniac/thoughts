@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 import re
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.interfaces.messaging import PromptMessage, AIMessage, HumanMessage, SystemMessage
 from thoughts.operations.core import Operation
 # from thoughts.operations.prompting import MessagesBatchAdder, PromptConstructor, PromptRunner, PromptStarter, PromptAppender

@@ -1,54 +1,56 @@
 {
     "name": "Game Agent",
 
-    "repeat": true,
-
-    "Workflow": [
+    "Behaviors": [
         
-        {"Thought": "React to Player", "train": [
-
-            {"Role": "You are a game master for a solo RPG game based in a Steampunk universe."},
-
-            "Overall Campaign:\nThe world is a series of floating islands connected by vast airships and dirigibles. The player, an intrepid explorer and adventurer, is on a quest to find the legendary island of Elysium, rumored to hold untold treasures and ancient technologies.",
-
-            {
-                "Context": "Current Quest:\nThe current quest is called 'The Captain's Map'." 
-            },
-            {
-                "Context": "Quest Goal",
-                "content": "Obtain a lost map from a retired airship captain that reveals the first clue to Elysium's location."
-            },
-            {
-                "Item": "Quest Overview"
-            },
-            {
-                "Context": "Quest Objectives",
-                "content": [
-                    "- Investigate Rumors: Gather information about the retired captain's whereabouts.",
-                    "- Locate the Captain: Find the captain in a hidden, secluded location.",
-                    "- Gain Trust: Complete a task or series of tasks to earn the captain's trust.",
-                    "- Obtain the Map: Secure the map from the captain, either through persuasion, trade, or other means."]
-            },
+        {"Task": "Run Game", "repeat": true, "steps": [
             
-            {"File": "scene.txt"},
+            {"Thought": "React to Player", "train": [
 
-            {"Item": "Progress Summary", "key": "Summary"},
+                {"Role": "You are a game master for a solo RPG game based in a Steampunk universe."},
 
-            {"Continue": "In a single paragraph, describe what happens in the very next turn based on the player's action. Only describe the effects on the environment and NPCs, do not make up any decisions or actions on behalf of the player. Use the second person voice. Always end with asking what the player wants to do next."},
-            {"History": 8},
-            {"StartInstruction": "This is the beginning of the game. In 1-2 paragraphs, introduce the player to the overall campaign and quest goal. Do not give away the quest overview or objectives yet. Bring the player into the story through an epic-style introduction, describe the current scene, and then ask the play what they would like to do next. Always use the second person voice."}
-        ]},
+                "Overall Campaign:\nThe world is a series of floating islands connected by vast airships and dirigibles. The player, an intrepid explorer and adventurer, is on a quest to find the legendary island of Elysium, rumored to hold untold treasures and ancient technologies.",
 
-        {"Write": "AI:"},
+                {
+                    "Context": "Current Quest:\nThe current quest is called 'The Captain's Map'." 
+                },
+                {
+                    "Context": "Quest Goal",
+                    "content": "Obtain a lost map from a retired airship captain that reveals the first clue to Elysium's location."
+                },
+                {
+                    "Item": "Quest Overview"
+                },
+                {
+                    "Context": "Quest Objectives",
+                    "content": [
+                        "- Investigate Rumors: Gather information about the retired captain's whereabouts.",
+                        "- Locate the Captain: Find the captain in a hidden, secluded location.",
+                        "- Gain Trust: Complete a task or series of tasks to earn the captain's trust.",
+                        "- Obtain the Map: Secure the map from the captain, either through persuasion, trade, or other means."]
+                },
+                
+                {"File": "scene.txt"},
 
-        {"Thought": "Summarize Progress", "into": "Summary", "runEvery": 4, "train": [
-            {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
-            {"Item": "Game Summary"},
-            {"History": 8},
-            {"Instruction": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
-        ]},
+                {"Item": "Progress Summary", "key": "Summary"},
 
-        {"Ask": "YOU:"}
+                {"Continue": "In a single paragraph, describe what happens in the very next turn based on the player's action. Only describe the effects on the environment and NPCs, do not make up any decisions or actions on behalf of the player. Use the second person voice. Always end with asking what the player wants to do next."},
+                {"History": 8},
+                {"StartInstruction": "This is the beginning of the game. In 1-2 paragraphs, introduce the player to the overall campaign and quest goal. Do not give away the quest overview or objectives yet. Bring the player into the story through an epic-style introduction, describe the current scene, and then ask the play what they would like to do next. Always use the second person voice."}
+            ]},
+
+            {"Write": "AI:"},
+
+            {"Thought": "Summarize Progress", "into": "Summary", "runEvery": 4, "train": [
+                {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
+                {"Item": "Game Summary"},
+                {"History": 8},
+                {"Instruction": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
+            ]},
+
+            {"Ask": "YOU:"}
+
+        ]}
     ],
 
     "Items":

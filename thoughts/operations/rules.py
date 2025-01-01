@@ -1,6 +1,7 @@
 from copy import deepcopy
 from thoughts.operations.core import Operation
-from thoughts.engine import Context, PipelineExecutor
+from thoughts.context import Context
+from thoughts.operations.workflow import PipelineExecutor
 from typing import List
 from thoughts.unification import unify
 

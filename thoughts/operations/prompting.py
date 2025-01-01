@@ -2,23 +2,29 @@ from thoughts.interfaces.messaging import AIMessage, HumanMessage, PromptMessage
 from thoughts.operations.console import ConsoleWriter
 from thoughts.operations.core import Operation
 import thoughts.interfaces.prompting
-from thoughts.engine import Context
+from thoughts.context import Context
 # from thoughts.operations.memory import ContextMemoryAppender, MemoryKeeper
-from thoughts.util import convert_to_list
-
+# from thoughts.util import convert_to_list
 from enum import Enum, auto
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from thoughts.operations.thought import Thought
+
+class PromptOperation(Operation):
+    thought: 'Thought' = None
 
 class RunCondition(Enum):
     ALWAYS = auto()
     CONTINUATION = auto()
     START = auto()
 
-def should_execute(context: Context, run_condition: RunCondition):
+def should_execute(context: Context, run_condition: RunCondition, thought: 'Thought' = None):
     if run_condition == RunCondition.ALWAYS:
         return True
-    elif run_condition == RunCondition.CONTINUATION and context.messages:
+    elif run_condition == RunCondition.CONTINUATION and thought.started:
         return True
-    elif run_condition == RunCondition.START and not context.messages:
+    elif run_condition == RunCondition.START and not thought.started:
         return True
     return False
 
@@ -101,7 +107,7 @@ class MessageStarter(Operation):
                 role = json_snippet.get("role", "human")
             return cls(role=role, content=json_snippet[moniker])
     
-class Role(Operation):
+class Role(PromptOperation):
     """
     Start a new prompt.
 
@@ -112,12 +118,13 @@ class Role(Operation):
     Returns a single message in a list, for subsequent operations to append to.
     """
     monikers = ["Role"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, content: str = "You are a helpful AI assistant.", file: str = None):
         self.condition = None
         self.content = content
         self.file = file
-    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
-        if not should_execute(context, run_condition):
+    def execute(self, context: Context, messages = None):
+        if not should_execute(context, self.run_condition, self.thought):
             return messages, None
         message_starter = MessageStarter(role="system", content=self.content, file=self.file)
         return message_starter.execute(context, messages)
@@ -133,25 +140,28 @@ class Role(Operation):
     
 class StartRole(Role):
     monikers = ["StartRole"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, RunCondition.START)
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class ContinueRole(Role):
     monikers = ["ContinueRole"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
-class IncludeContext(Operation):
+class IncludeContext(PromptOperation):
     monikers = ["Context", "IncludeContext"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, title: str = None, content: str = None, from_item: str = None, file: str = None ):
         self.condition = None
         self.title = title
         self.content = content
         self.from_item = from_item
         self.file = file
-    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+    def execute(self, context: Context, messages = None):
 
-        if not messages or not should_execute(context, run_condition):         
+        if not messages or not should_execute(context, self.run_condition, self.thought):         
             return messages, None
         
         prompt_message: PromptMessage = messages[-1] if messages else None
@@ -188,16 +198,19 @@ class IncludeContext(Operation):
 
 class StartContext(IncludeContext):
     monikers = ["Start", "StartContext"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, RunCondition.START)
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
         
 class ContinueContext(IncludeContext):
     monikers = ["Continue", "ContinueContext"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+        # return super().execute(context, messages, thought_started=thought_started)
     
 class IncludeItem(IncludeContext):
     monikers = ["Item", "IncludeItem"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, title: str = None, key: str = None):
         if key is None:
             key = title
@@ -212,16 +225,19 @@ class IncludeItem(IncludeContext):
     
 class ContinueItem(IncludeItem):
     monikers = ["ContinueItem"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class StartItem(IncludeItem):
     monikers = ["StartItem"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.START)
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class IncludeFile(IncludeContext):
     monikers = ["File", "IncludeFile"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, title: str = None, file: str = None):
         if file is None:
             file = title
@@ -236,15 +252,17 @@ class IncludeFile(IncludeContext):
     
 class ContinueFile(IncludeFile):
     monikers = ["ContinueFile"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class StartFile(IncludeFile):
     monikers = ["StartFile"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.START)
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)  
 
-class IncludeHistory(Operation):
+class IncludeHistory(PromptOperation):
     """
     Loads a specified number of recent messages from the context's message history 
     and appends them to an existing list of messages.
@@ -265,10 +283,15 @@ class IncludeHistory(Operation):
             - None (placeholder for additional return data, unused in this implementation).
     """
     monikers = ["History", "IncludeHistory"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, num_messages: int = 4):
         self.condition = None
         self.num_messages = num_messages
-    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+    def execute(self, context: Context, messages = None):
+
+        if not should_execute(context, self.run_condition, thought=self.thought):       
+            return messages, None
+
         message_history = context.peek_messages(self.num_messages)
         if messages is None:
             messages = []
@@ -280,24 +303,27 @@ class IncludeHistory(Operation):
         return cls(num_messages=json_snippet[moniker])
     
 class StartHistory(IncludeHistory):
-    momikers = ["StartHistory"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.START)
+    monikers = ["StartHistory"]
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class ContinueHistory(IncludeHistory):
     monikers = ["ContinueHistory"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
-class Instruction(Operation):
+class Instruction(PromptOperation):
     monikers = ["Instruction", "IncludeInstruction"]
+    run_condition = RunCondition.ALWAYS
     def __init__(self, content: str = None, file: str = None):
         self.condition = None
         self.content = content
         self.file = file
-    def execute(self, context: Context, messages = None, run_condition: RunCondition = RunCondition.ALWAYS):
+    def execute(self, context: Context, messages = None):
         
-        if not should_execute(context, run_condition):       
+        if not should_execute(context, self.run_condition, thought=self.thought):       
             return messages, None
         
         if not messages:
@@ -322,13 +348,15 @@ class Instruction(Operation):
 
 class StartInstruction(Instruction):
     monikers = ["StartInstruction"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.START)
+    run_condition = RunCondition.START
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
     
 class ContinueInstruction(Instruction):
     monikers = ["ContinueInstruction"]
-    def execute(self, context: Context, messages=None):
-        return super().execute(context, messages, run_condition=RunCondition.CONTINUATION)
+    run_condition = RunCondition.CONTINUATION
+    # def execute(self, context: Context, messages=None, thought_started: bool = False):
+    #     return super().execute(context, messages, thought_started=thought_started)
 
 class MessagesBatchAdder(Operation):
     def __init__(self, batch_size: int = 4, exclude_ids: list = [], allow_partial_batch: bool = False):
@@ -476,7 +504,7 @@ class PromptConstructor(Operation):
             messages, control = operation.execute(context, messages)
         return messages, None
     @classmethod
-    def parse_json(cls, json_snippet, config):
+    def parse_json(cls, json_snippet, config, thought: 'Thought' = None):
         ops = json_snippet
         operations = []
 
@@ -492,6 +520,8 @@ class PromptConstructor(Operation):
                 operation_class = moniker_mapping.get(moniker)
                 if operation_class:
                     operation = operation_class.parse_json(op, config)
+                    if isinstance(operation, PromptOperation):
+                        operation.thought = thought
 
             # if type(op) is str:
             #     operation = IncludeContext(title=None, content=op)

@@ -1,4 +1,4 @@
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.operations.core import Operation
 from thoughts.operations.prompting import PromptRunner
 

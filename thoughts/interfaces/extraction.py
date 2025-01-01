@@ -2,7 +2,7 @@
 from collections import defaultdict
 import pprint
 import string
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.interfaces.messaging import AIMessage
 from thoughts.operations.core import Operation
 

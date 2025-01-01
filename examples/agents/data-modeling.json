@@ -1,30 +1,36 @@
 {
     "name": "Data Modeling",
 
-    "repeat": false,
-
-    "Agents": [
-        {"Agent": "Joe", "role": "Your name is Joe and you create data models for federal mission-specific applications."},
-        {"Agent": "Cathy", "role": "Your name is Cathy and you validate data models against federal mission-specific business processes."},
-        {"Agent": "Barry", "role": "Your name is Barry and you help summarize data model information."}
-    ],
-
-    "Tasks": [
+    "Behaviors": [
         
-        {"Task": "Brainstorm and Summarize", "Repeat": true, "Steps": [
+        {"Task": "Brainstorm and Summarize", "repeat": false, "steps": [
             
             {"Ask": "Use case?"},
 
-            {"Task": "Brainstorm", "maxRuns": 3, "Steps": [
-                {"Chat": "Joe", 
-                    "start": "State the use case. Then create a list of tables and fields for the provided use case.",
-                    "instruction": "Revise the data model based on the feedback provided."},
-                {"Chat": "Cathy", 
-                    "instruction": "Provide feedback on the data model based on the business process for the use case."}
+            {"Task": "Design Data Model", "repeat": true, "maxRuns": 2, "steps": [
+
+                {"Thought": "Business Analyst", "output": true, "train": [
+                    {"Role": "You are a business process analyst for federal mission-specific applications."},
+                    {"Continue": "Provide feedback to improve and enhance the data model based on the business process. Think about additional tables and fields that could apply to the use case. Use example agencies if needed to think of additional data elements."},
+                    {"Continue": "Do not include feedback on Compliance, Analytics, Reporting, User Interface, User Permissions, User Experience, User Roles, Audit Logs, or Audit Trails. Do not include Implementation Notes. Stick to the business process personas and steps only."},
+                    {"History": 3},
+                    {"StartInstruction": "Describe in detail how a US Federal agency manages this business process from end to end. Be specific on the personas, steps, and data elements needed for each step. Consider any standard US Federal forms that apply to the use case."}
+                ]},
+
+                {"Thought": "Data Modeler", "output": true, "train": [
+                    {"Role": "You are a data modeler for federal mission-specific applications."},
+                    {"Context": "Create or enhance the data model based on the provided information in the business process. Include as many tables and fields as possible based on known US Federal forms that apply for the use case."},
+                    {"Context": "Do not include tables or fields for Compliance, Analytics, Reporting, User Interface, User Permissions, User Experience, User Roles, Audit Logs, or Audit Trails. Do not include Implementation Notes."},
+                    {"Context": "Prefix the table and field schema names with govcdm_. Assume all tables and fields will be implemeted in Power Apps using Dataverse."},
+                    {"History": 3}
+                ]}
             ]},
 
-            {"Analyze": "Barry", "into": "Summary",
-                "instruction": "Summarize the final data model."}
+            {"Thought": "Technical Writer", "output": true, "train": [
+                {"Role": "You are a technical writer for federal mission-specific applications."},
+                {"History": 3},
+                {"Instruction": "Summarize the final data model into a hierarahical list. For each table include the Display Name, Schema Name, and Brief Description. For each field include the Display Name, Schema Name, Data Type, and Brief Description. Format as a markdown list (not a table). Example:\n# My Table (govcdm_mytable):\n\nMy Table tracks information about...\n\n- Field 1 (govcdm_field1) [Text]: Description\n- Field 2 (govcdm_field2) [Integer]: Description"}
+            ]}
         ]}
     ]
 }

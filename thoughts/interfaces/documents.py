@@ -1,7 +1,7 @@
 
 import re
 
-from thoughts.engine import Context
+from thoughts.context import Context
 from thoughts.operations.core import Operation
 
 class DocumentSplitter(Operation):

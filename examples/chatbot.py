@@ -3,8 +3,8 @@ from thoughts.interfaces.messaging import PromptMessage
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
 from thoughts.operations.memory import InformationExtractor, MessagesSummarizer, SessionIterator
 from thoughts.operations.prompting import ContextItemAppender, AppendHistory, IncludeContext, PromptConstructor, PromptRunner, Role
-from thoughts.engine import Context
-from thoughts.engine import PipelineExecutor
+from thoughts.context import Context
+from thoughts.agent import PipelineExecutor
 from thoughts.operations.rules import HasValue, LogicRule, RulesRunner
 
 # def extract_followups():

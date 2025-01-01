@@ -3,12 +3,14 @@ from thoughts.context import Context
 from thoughts.operations.core import Operation
 from thoughts.interfaces.messaging import HumanMessage, SystemMessage
 from thoughts.operations.prompting import PromptConstructor
+from thoughts.util import console_log
 
 class Thought(Operation):
 
     def __init__(self, name, train, save_into = None, run_every = 1, output = False):
         self.name = name
         self.train: PromptConstructor = train
+        self.started = False
         self.save_into = save_into
         self.run_every = run_every
         self.num_since_last_run = 0
@@ -26,13 +28,23 @@ class Thought(Operation):
 
         messages, control = self.train.execute(context, message)
 
+        if True:
+            for message in messages:
+                if isinstance(message, SystemMessage):
+                    console_log(message.content, "magenta")
+                else:
+                    console_log(f'[{type(message)}]', "magenta")
+
         # invoke AI
         ai_message = context.llm.invoke(messages, stream=True)
 
+        # mark as started (after the first run)
+        self.started = True
+
         # display result
         if self.output:
-            print("\n")
-            print(self.name, ": ", ai_message.content, sep="")
+            console_log("", "green")
+            console_log(f'{self.name}: {ai_message.content}', "green")
 
         # save into
         if self.save_into is not None:
@@ -116,15 +128,17 @@ class Thought(Operation):
     def parse_json(cls, json_snippet, config):
 
         name = json_snippet.get("Thought", None)
-        
-        train_config = json_snippet.get("train", [])
-        train = PromptConstructor.parse_json(train_config, config)
-
         save_into = json_snippet.get("into", None)
         run_every = json_snippet.get("runEvery", 1)
         output = json_snippet.get("output", False)
 
-        return cls(name=name, train=train, save_into=save_into, run_every=run_every, output=output)
+        thought = cls(name=name, train=None, save_into=save_into, run_every=run_every, output=output)
+    
+        # delay parsing the train config until the thought is executed
+        train_config = json_snippet.get("train", [])
+        train = PromptConstructor.parse_json(train_config, config, thought)
+        thought.train = train
+        return thought
     
 class AnalyzeMessages(Operation):
     def __init__(self, name, role, instruction):
