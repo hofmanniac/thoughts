@@ -1,8 +1,9 @@
 from thoughts.context import Context
 from thoughts.operations.core import Operation
-from thoughts.operations.thought import Thought, AnalyzeMessages
+from thoughts.operations.routing import Choice
+from thoughts.operations.thought import Thought
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
-from thoughts.operations.memory import MemoryKeeper, TextSplitter
+# from thoughts.operations.memory import MemoryKeeper, TextSplitter
 
 class Node:
     def __init__(self, name: str, operation: Operation, condition=None):
@@ -148,13 +149,15 @@ class PipelineExecutor(Operation):
                 nodes.append(ConsoleWriter.parse_json(item, config))
             elif "Thought" in item:
                 nodes.append(Thought.parse_json(item, config))
+            elif "PipelineExecutor" in item or "Task" in item:
+                nodes.append(PipelineExecutor.parse_json(item, config))
+            elif "Choice" in item:
+                nodes.append(Choice.parse_json(item, config))
             # if "think" in item or "PromptRunner" in item:
             #     nodes.append(PromptRunner.parse_json(item, config))
             # elif "communicate" in item:
             #     nodes.append(PromptRunner.parse_json(item, config))
             #     nodes.append(ConsoleWriter.parse_json(item, config))
-            elif "PipelineExecutor" in item or "Task" in item:
-                nodes.append(PipelineExecutor.parse_json(item, config))
             # elif "remember" in item:
             #     prompt_runner = PromptRunner.parse_json(item, config)
             #     prompt_runner.append_history = False # internal thought vs. communication

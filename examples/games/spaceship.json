@@ -1,28 +1,30 @@
 {
     "name": "Game Agent",
 
-    "repeat": true,
+    "Behaviors": [
+    
+        {"Task": "Run Game", "repeat": true, "steps": [
 
-    "Workflow": [
-        
-        {"Thought": "React to Player", "train": [
-            {"Role": "You are a game master."},
-            "The goal of the game is for the player to repair the spaceship or to escape.",
-            "Do not make up actions on behalf of the player, let them decide what to do at each step.",
-            {"Recall": "Game Summary", "as": "Game Summary"},
-            {"Continue": "Describe what happens next based on the player's input. Always ask what the player wants to do next."},
-            {"History": 8},
-            {"Start": "The player starts out in the broken down spaceship."},
-            {"Start": "Start out by describing the overall scene. Then ask the player what they want to do next."}
-        ]},
+            {"Thought": "React to Player", "train": [
+                {"Role": "You are a game master."},
+                "The goal of the game is for the player to repair the spaceship or to escape.",
+                "Do not make up actions on behalf of the player, let them decide what to do at each step.",
+                {"Item": "Game Summary"},
+                {"Continue": "Describe what happens next based on the player's input. Always ask what the player wants to do next."},
+                {"History": 8},
+                {"StartInstruction": "The player starts out in the broken down spaceship."},
+                {"StartInstruction": "Start out by describing the overall scene. Then ask the player what they want to do next."}
+            ]},
+            {"Write": "AI"},
 
-        {"Thought": "Summarize Progress", "into": "Game Summary", "runEvery": 4, "train": [
-            {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
-            {"Recall": "summary", "as": "Game Summary"},
-            {"History": 8},
-            {"Instruction": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
-        ]},
+            {"Thought": "Summarize Progress", "into": "Game Summary", "runEvery": 4, "train": [
+                {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
+                {"Item": "Game Summary"},
+                {"History": 8},
+                {"Instruction": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
+            ]},
 
-        {"Ask": "YOU:"}
+            {"Ask": "YOU:"}
+        ]}
     ]
 }

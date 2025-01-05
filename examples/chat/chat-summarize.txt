@@ -1,5 +1,0 @@
-Summarize what has happened in the conversation so far. Use simple sentences. State the information in the past tense. Format the results as non-numbered bulleted list with no other introduction or commentary.
-
-Example:
-- User mentioned they went to a party in Chicago, IL on Tuesday
-- User discussed how they enjoy watching tennis

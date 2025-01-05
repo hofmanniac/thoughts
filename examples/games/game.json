@@ -33,6 +33,7 @@
                 {"File": "scene.txt"},
 
                 {"Item": "Progress Summary", "key": "Summary"},
+                {"Item": "Locations"},
 
                 {"Continue": "In a single paragraph, describe what happens in the very next turn based on the player's action. Only describe the effects on the environment and NPCs, do not make up any decisions or actions on behalf of the player. Use the second person voice. Always end with asking what the player wants to do next."},
                 {"History": 8},
@@ -46,6 +47,13 @@
                 {"Item": "Game Summary"},
                 {"History": 8},
                 {"Instruction": "Summarize the last few interactions. Create a concise, bulleted list of what has happened so far in the game. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous summary for a complete description of the world state."}
+            ]},
+
+            {"Thought": "Track Locations", "into": "Locations", "runEvery": 4, "train": [
+                {"Role": "You are the memory system for a game agent. You will keep track of the game's locations and exits."},
+                {"Item": "Locations"},
+                {"History": 8},
+                {"Instruction": "Summarize the location and exit information from the last several interactions. Create a concise, bulleted list of each location and its exits. Only include the bulleted list with no introduction or conclusion. Use a simple, active sentence with minimal words to convey the information. Include information from the previous location information for a complete description of the world."}
             ]},
 
             {"Ask": "YOU:"}

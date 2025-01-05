@@ -1,9 +1,0 @@
-Create a list of topics found in the conversation above.
-
-Format the topics as a single bulleted list. Use only a short noun phrase for the topic. Return only the list of topics.
-
-Example:
-- Billy Joel
-- The Billy Joel Concert
-- A dog named Hudson
- 

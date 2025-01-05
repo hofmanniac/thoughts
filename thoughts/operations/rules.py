@@ -1,9 +1,12 @@
 from copy import deepcopy
 from thoughts.operations.core import Operation
 from thoughts.context import Context
-from thoughts.operations.workflow import PipelineExecutor
 from typing import List
 from thoughts.unification import unify
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from thoughts.operations.workflow import PipelineExecutor
 
 class Unifies(Operation):
     def __init__(self, condition: dict):
@@ -20,25 +23,42 @@ class LogicRule(Operation):
         self.else_actions = else_actions
         self.supress_execution = supress_execution
     def execute(self, context: Context, message):
-        result, control = self.condition.execute(context, message)
+        _, truth = self.condition.execute(context, message)
+        self.execute_actions(context, truth, message)
+    def execute_actions(self, context: Context, truth: bool, message = None):
         actions = []
-        if control == True:
+        if truth:
             for base_action in self.actions:
-                action = context.apply_values(base_action, result)
+                action = base_action
                 actions.append(action)
         else:
             for base_action in self.else_actions:
                 action = base_action
                 actions.append(action)
-
         if self.supress_execution:
-            return actions, None
+            return actions, control
         else:
             runner = PipelineExecutor(actions, context=context)
             result, control = runner.execute(context, message)
             # pipeline should only execute once for the actions block, extract first result set
             final_result = result[0] if len(result) == 1 else result
             return final_result, control
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        condition = json_snippet.get("When", None)
+        actions = json_snippet.get("Then", [])
+        else_actions = json_snippet.get("Else", [])
+        supress_execution = json_snippet.get("supressActions", False)
+        return cls(condition, actions, else_actions, supress_execution)
+        
+class Equals(Operation):
+    def __init__(self, item_key: str, value):
+        self.item_key = item_key
+        self.value = value
+    def execute(self, context: Context, message = None):
+        test_value = context.get_item(self.item_key)
+        truth = True if test_value == self.value else False
+        return test_value, truth
 
 class HasValue(Operation):
     def __init__(self, item_key: str):
@@ -47,6 +67,16 @@ class HasValue(Operation):
         test_value = context.get_item(self.item_key)
         truth = True if test_value is not None else False
         return test_value, truth
+    
+class LastMessage(Operation):
+    def __init__(self, role: str):
+        self.role = role
+    def execute(self, context: Context, message = None):
+        last_message = context.peek_messages(1)
+        if last_message is None:
+            return None, False
+        if last_message.role == self.role:
+            return last_message, True
     
 class FactAsserter(Operation):
     def __init__(self, fact: dict):

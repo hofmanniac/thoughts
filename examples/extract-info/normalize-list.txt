@@ -1,3 +1,0 @@
-Normalize the list of items below. Simplify the names or phrasing as much as possible. Sort the list alphabetically and then remove any duplicates. Format as a single bulleted list. Return only the list.
-
-Items:

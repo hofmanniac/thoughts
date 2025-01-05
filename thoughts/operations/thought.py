@@ -3,11 +3,12 @@ from thoughts.context import Context
 from thoughts.operations.core import Operation
 from thoughts.interfaces.messaging import HumanMessage, SystemMessage
 from thoughts.operations.prompting import PromptConstructor
+from thoughts.parser import ConfigParser
 from thoughts.util import console_log
 
 class Thought(Operation):
 
-    def __init__(self, name, train, save_into = None, run_every = 1, output = False):
+    def __init__(self, name, train, save_into = None, run_every = 1, output = False, condition = None):
         self.name = name
         self.train: PromptConstructor = train
         self.started = False
@@ -16,7 +17,7 @@ class Thought(Operation):
         self.num_since_last_run = 0
         self.messages = []
         self.output = output
-        self.condition = None
+        self.condition = condition
 
     def execute(self, context: Context, message = None):
 
@@ -132,13 +133,17 @@ class Thought(Operation):
         run_every = json_snippet.get("runEvery", 1)
         output = json_snippet.get("output", False)
 
-        thought = cls(name=name, train=None, save_into=save_into, run_every=run_every, output=output)
+        condition_config = json_snippet.get("when", None)
+        condition = ConfigParser.parse_logic_condition(condition_config)
+
+        thought = cls(name=name, train=None, save_into=save_into, run_every=run_every, output=output, condition=condition)
     
         # delay parsing the train config until the thought is executed
         train_config = json_snippet.get("train", [])
         train = PromptConstructor.parse_json(train_config, config, thought)
         thought.train = train
         return thought
+
     
 class AnalyzeMessages(Operation):
     def __init__(self, name, role, instruction):

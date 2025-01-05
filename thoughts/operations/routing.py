@@ -1,6 +1,40 @@
 from thoughts.context import Context
 from thoughts.interfaces.messaging import SystemMessage
 from thoughts.operations.core import Operation
+from thoughts.operations.rules import LogicRule
+from thoughts.operations.thought import Thought
+
+class Choice(Operation):
+    def __init__(self, options: list, repeat: bool = False):
+        self.repeat = repeat
+        self.options = options
+        self.condition = None
+    def execute(self, context: Context, message = None): 
+        option: Operation = None
+        for option in self.options:
+            condition: Operation = option.condition
+            # no condition - default to true
+            if condition is None:
+                break
+            # condition exists - check if it's true
+            _, truth = condition.execute(context, message)
+            if truth == True:
+                break
+        if option is not None:
+            if isinstance(option, LogicRule):
+                return option.execute_actions(context, truth, message)
+            return option.execute(context, message)
+        return None, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        repeat = json_snippet.get("repeat", False)
+        items = []
+        for item in json_snippet["options"]:
+            if "Thought" in item:
+                items.append(Thought.parse_json(item, config))
+            elif "When" in item:
+                items.append(LogicRule.parse_json(item, config))
+        return cls(options=items, repeat=repeat)
 
 class LLMRoutingAgent(Operation):
     def __init__(self, agents: list, routing_prompt: str):

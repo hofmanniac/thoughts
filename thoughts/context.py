@@ -75,7 +75,7 @@ class Context:
         directory_path = "memory/sessions/" + self.session_id
         with open(os.path.join(directory_path, "manifest.json"), "r") as f:
             manifest = json.load(f)
-        self.content_path = manifest["prompt-path"]
+        self.content_path = manifest["content-path"]
         self.persist_session = manifest["persist-session"]
 
     def _load(self):

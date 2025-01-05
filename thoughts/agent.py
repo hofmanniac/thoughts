@@ -1,6 +1,7 @@
 import json
 from thoughts.context import Context
 from thoughts.operations.core import Operation
+from thoughts.operations.routing import Choice
 from thoughts.operations.workflow import PipelineExecutor
 
 class Agent(Operation):
@@ -19,6 +20,9 @@ class Agent(Operation):
             if "Task" in behavior:
                 task = PipelineExecutor.parse_json(behavior, config)
                 self.behaviors.append(task)
+            elif "Choice" in behavior:
+                choice = Choice.parse_json(behavior, config)
+                self.behaviors.append(choice)
 
         items = config.get("Items", [])
         # Set each item in the context using the first property as the item name and value

@@ -42,6 +42,7 @@ def get_first_moniker(json_snippet, monikers):
     return next(moniker for moniker in monikers if moniker in json_snippet)  
 
 def create_moniker_mapping(base_class):
+    from thoughts.operations.memory import SetItem
     moniker_mapping = {}
     
     def add_subclasses(cls):

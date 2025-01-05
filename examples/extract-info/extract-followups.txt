@@ -1,7 +1,0 @@
-Create a list of follow up suggestions for a friend to ask about a few days later based on the conversation above.
-
-Format the follow up suggestions as a single bulleted list. Use simple sentences in the active voice. Return only the list of follow up suggestions.
-
-Example:
- - Ask about the concert that they attended
- 

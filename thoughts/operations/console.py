@@ -48,13 +48,14 @@ class ConsoleReader(Operation):
         return cls(prompt=prompt, append_interaction_history = append_interaction_history)
 
 class ConsoleWriter(Operation):
-    def __init__(self, text = None, typing_speed=0.03, from_item = None):
+    def __init__(self, text = None, typing_speed=0.03, from_item = None, message_provider: Operation = None):
+        self.message_provider: Operation = message_provider
         self.text = text
         self.typing_speed = typing_speed
         self.condition = None
         self.from_item = from_item
 
-    def execute(self, context: Context, message = None, from_item = None):
+    def execute(self, context: Context, message = None):
 
         if self.text is not None:
             last_message = thoughts.interfaces.messaging.AIMessage(content=self.text)
@@ -63,6 +64,8 @@ class ConsoleWriter(Operation):
                 last_message = context.get_item(self.from_item)
                 if type(last_message) is str:
                     last_message = thoughts.interfaces.messaging.AIMessage(content=last_message)
+            elif self.message_provider is not None:
+                last_message, _ = self.message_provider.execute(context, message)
             elif message is not None:
                 last_message = message
             else:
@@ -75,6 +78,12 @@ class ConsoleWriter(Operation):
     @classmethod
     def parse_json(cls, json_snippet, config):
         # moniker = "Ask" if "Ask" in json_snippet else "MessageWriter"
+        
+        moniker_value = json_snippet.get("Write", None)
+        if type(moniker_value) is dict:
+            message_provider = moniker_value
+
         from_item = json_snippet.get("from", None)
         typing_speed = json_snippet.get("speed", 0.03)
-        return cls(from_item=from_item, typing_speed=typing_speed)
+        
+        return cls(from_item=from_item, typing_speed=typing_speed, message_provider=message_provider)

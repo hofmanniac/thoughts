@@ -5,7 +5,7 @@ from thoughts.context import Context
 from thoughts.interfaces.messaging import PromptMessage, AIMessage, HumanMessage, SystemMessage
 from thoughts.operations.core import Operation
 # from thoughts.operations.prompting import MessagesBatchAdder, PromptConstructor, PromptRunner, PromptStarter, PromptAppender
-from thoughts.operations.prompting import IncludeContext, IncludeFile, IncludeHistory, IncludeItem, Role, StartInstruction
+# from thoughts.operations.prompting import IncludeContext, IncludeFile, IncludeHistory, IncludeItem, Role, StartInstruction
 from thoughts.util import convert_to_list
 
 class DictFormatter(dict):
@@ -297,6 +297,20 @@ class RAGContextAdder(Operation):
         prompt["context"].append(rag_context)
         
         return rag_context, None
+    
+class SetItem(Operation):
+    monikers = ["SetItem"]
+    def __init__(self, key: str, value):
+        self.key = key
+        self.value = value
+    def execute(self, context: Context, message = None):
+        context.set_item(self.key, self.value)
+        return message, None
+    @classmethod
+    def parse_json(cls, json_snippet, config):
+        key = json_snippet["SetItem"]
+        value = json_snippet["value"]
+        return cls(key=key, value=value)
     
 class MemoryKeeper(Operation):
     def __init__(self, item_key: str = "", replace: bool = False):
