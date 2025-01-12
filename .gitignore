@@ -11,6 +11,7 @@ __pycache__
 /rules
 samples/private
 examples/private
+examples/temp/*
 /temp
 /thoughts.code-workspace
 /thoughts.egg-info

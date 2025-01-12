@@ -4,7 +4,7 @@ from thoughts import context as ctx
 import thoughts.unification
 import copy
 
-def process(command, context: ctx.Context):
+def process(command, context: ctx.RulesContext):
     
     # will collect result conclusions generated
     result = []
@@ -36,7 +36,7 @@ def process(command, context: ctx.Context):
     stored = context.store_item(command, result)
     if stored == False: return result
 
-def attempt_arcs(assertion, context: ctx.Context):
+def attempt_arcs(assertion, context: ctx.RulesContext):
    
     # run the agenda item against all arcs
     result = []
@@ -60,7 +60,7 @@ def attempt_arcs(assertion, context: ctx.Context):
 
     return result
 
-def attempt_rulesets(assertion, context: ctx.Context):
+def attempt_rulesets(assertion, context: ctx.RulesContext):
     # run the agenda item against all rulesets in the context
     result = []
 
@@ -78,7 +78,7 @@ def attempt_rulesets(assertion, context: ctx.Context):
             
     return result
 
-def attempt_rules(assertion, rules:list, context:ctx.Context):
+def attempt_rules(assertion, rules:list, context:ctx.RulesContext):
     # run the agenda item against all items in the ruleset
     result = []
     for item in rules:
@@ -89,7 +89,7 @@ def attempt_rules(assertion, rules:list, context:ctx.Context):
         result = context.merge_into_list(result, sub_result)
     return result
 
-def attempt_if(item, assertion, context: ctx.Context):
+def attempt_if(item, assertion, context: ctx.RulesContext):
     
     if_portion = None
     if "#if" in item: if_portion = item["#if"]
@@ -123,7 +123,7 @@ def attempt_if(item, assertion, context: ctx.Context):
 
     return result
 
-def attempt_condition(condition:dict, context: ctx.Context):
+def attempt_condition(condition:dict, context: ctx.RulesContext):
     
     result = False
 
@@ -137,7 +137,7 @@ def attempt_condition(condition:dict, context: ctx.Context):
 
     return result
 
-def attempt_rule(rule, assertion, context: ctx.Context):
+def attempt_rule(rule, assertion, context: ctx.RulesContext):
 
     if "#when" not in rule: return # if the item is not a rule then skip it
     result = [] 
@@ -326,7 +326,7 @@ def attempt_rule(rule, assertion, context: ctx.Context):
     return result
 
    # process the 'then' portion of the rule
-def process_then(rule, unification, context: ctx.Context):
+def process_then(rule, unification, context: ctx.RulesContext):
     
     result = []
     then = rule["#then"] # get the "then" portion (consequent) for the rule

@@ -2,7 +2,7 @@ import json
 import os
 # from build.lib import thoughts
 # from build.lib.thoughts import context
-from thoughts.context import Context
+from thoughts.context import RulesContext
 # from thoughts.commands import tokenize
 
 # import thoughts.unification
@@ -13,7 +13,7 @@ import copy
 
 class RulesEngine:
 
-    context = Context()
+    context = RulesContext()
     # log = []
     _agenda = []
     _plugins = {}
@@ -21,7 +21,7 @@ class RulesEngine:
 
     def __init__(self):
         
-        self.context = Context()
+        self.context = RulesContext()
         self._agenda = []
         self._load_plugins()
 

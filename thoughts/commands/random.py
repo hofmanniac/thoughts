@@ -9,5 +9,5 @@ def process(command, context):
         max = len(random_set)
         r = random.randint(0, max-1)
         item = random_set[r]
-        ctx.Context.store_item(context, command, item)
+        ctx.RulesContext.store_item(context, command, item)
         return random_set[r]

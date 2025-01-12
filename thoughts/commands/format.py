@@ -23,5 +23,5 @@ def process(command, context):
     elif as_format == "sentence":
         if type(target) is str: result = str.capitalize(target)
 
-    ctx.Context.store_item(context, command, result)
+    ctx.RulesContext.store_item(context, command, result)
     return result

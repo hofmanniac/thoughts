@@ -1,7 +1,7 @@
 from thoughts import context as ctx
 import time
 
-def process(command, context: ctx.Context):
+def process(command, context: ctx.RulesContext):
     
     target = command["#replace"]
 
@@ -48,7 +48,7 @@ def process(command, context: ctx.Context):
 def process2(command, context):
     
     target = command["#replace"]
-    # target = ctx.Context.find_item(target)
+    # target = ctx.RulesContext.find_item(target)
 
     withset = command["with"]
 
@@ -59,7 +59,7 @@ def process2(command, context):
     if found_val is not None: 
         new_val = found_val
         new_val = str.strip(new_val)
-        ctx.Context.store_item(context, command, new_val)
+        ctx.RulesContext.store_item(context, command, new_val)
         return new_val
 
         # result = ""

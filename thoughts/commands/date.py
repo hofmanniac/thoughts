@@ -30,6 +30,6 @@ def process(command, context):
     else:
         result = base_date.strftime("%B %d, %Y")
 
-    ctx.Context.store_item(context, command, result)
+    ctx.RulesContext.store_item(context, command, result)
 
     return result

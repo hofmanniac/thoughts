@@ -1,7 +1,7 @@
 from thoughts import context as ctx
 import thoughts.unification
 
-def process(command, context: ctx.Context):
+def process(command, context: ctx.RulesContext):
 
     result = []
 

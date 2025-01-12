@@ -10,7 +10,7 @@ def process(command, context):
     if "rate" in command: rate = command["rate"]
 
     if (type(text) is str):
-        item = thoughts.context.Context.retrieve(context, text)
+        item = thoughts.context.RulesContext.retrieve(context, text)
 
     if (type(item) is str):
         slow_output(item, rate)

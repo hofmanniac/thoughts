@@ -11,5 +11,5 @@ def process(command, context):
         parts = str.split(target, " ")
         result = parts[1:]
 
-    ctx.Context.store_item(context, command, result)
+    ctx.RulesContext.store_item(context, command, result)
     return result

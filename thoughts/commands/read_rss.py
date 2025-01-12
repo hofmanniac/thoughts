@@ -1,7 +1,7 @@
 import feedparser
 import thoughts.context
 
-def process(command, context: thoughts.context):
+def process(command, context: thoughts.context.RulesContext):
     
     url = command["#read-rss"]
     items = feedparser.parse(url)
