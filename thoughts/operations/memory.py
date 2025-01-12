@@ -529,7 +529,8 @@ class SessionIterator(Operation):
         return valid_folders[:n]
     
     def execute(self, context: Context, message = None):
-        folders = self._get_last_n_folders("memory/sessions", self.num_previous)
+        
+        folders = self._get_last_n_folders(context.project_root + "/memory/sessions", self.num_previous)
         results = []
         for folder in folders:
             session_id = folder

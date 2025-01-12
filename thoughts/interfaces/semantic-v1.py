@@ -61,7 +61,7 @@ class SemanticClusters:
 
         self.context = context
         self.collection_name = "clusters"
-        self.db_path = "memory/clusters"
+        self.db_path = context.project_root + "/memory/clusters"
         self.clusters: List[Thought] = []
         self.memories: List[Thought] = []
         self.similarity_threshold = 0.5 #0.8

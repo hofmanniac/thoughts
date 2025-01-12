@@ -21,7 +21,13 @@ class MemoryModule:
     def __init__(self):
         warnings.filterwarnings("ignore")
         logging.basicConfig(level=logging.CRITICAL)
-        self.chroma_client = chromadb.PersistentClient(path="memory/chroma")
+
+        # Get the directory of the current script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Construct the path to the root of the project
+        self.project_root = os.path.abspath(os.path.join(script_dir, "../.."))
+
+        self.chroma_client = chromadb.PersistentClient(path=self.project_root + "/memory/chroma")
         self.ef = embedding_functions.DefaultEmbeddingFunction()
         self.messages = []
 
@@ -61,7 +67,12 @@ class Memory:
 
 #         # self.llm = llm
 
-        self.chroma_client = chromadb.PersistentClient(path="memory/chroma")
+        # Get the directory of the current script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Construct the path to the root of the project
+        project_root = os.path.abspath(os.path.join(script_dir, "../.."))
+
+        self.chroma_client = chromadb.PersistentClient(path=project_root + "/memory/chroma")
 
 #         print("Initializing embedding model...")
         self.ef = embedding_functions.DefaultEmbeddingFunction()

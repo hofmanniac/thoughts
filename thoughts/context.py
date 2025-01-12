@@ -30,7 +30,12 @@ class Context:
         self.logs = []
         self.debug = debug
 
-        session_path = "memory/sessions/" + self.session_id
+                # Get the directory of the current script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Construct the path to the root of the project
+        self.project_root = os.path.abspath(os.path.join(script_dir, "../.."))
+
+        session_path = self.project_root + "/memory/sessions/" + self.session_id
         if os.path.exists(session_path):
             self._load()
 
@@ -58,13 +63,13 @@ class Context:
         # manifest = {"prompt-path": self.content_path, "persist-session": self.persist_session}
         manifest = {"content-path": self.content_path, "persist-session": self.persist_session}
 
-        directory_path = "memory/sessions/" + self.session_id
+        directory_path = self.project_root + "/memory/sessions/" + self.session_id
         os.makedirs(directory_path, exist_ok=True)
         with open(os.path.join(directory_path, "manifest.json"), "w") as f:
             json.dump(manifest, f, indent=4)
 
         # save the items as individual files
-        directory_path = "memory/sessions/" + self.session_id + "/items"
+        directory_path = self.project_root + "/memory/sessions/" + self.session_id + "/items"
         os.makedirs(directory_path, exist_ok=True)
         if key == "":
             with open(os.path.join(directory_path, "items.json"), "w") as f:
@@ -75,7 +80,7 @@ class Context:
                 json.dump(item, f, indent=4, cls=CustomEncoder)
         
     def _read_manifest(self):
-        directory_path = "memory/sessions/" + self.session_id
+        directory_path = self.project_root + "/memory/sessions/" + self.session_id
         with open(os.path.join(directory_path, "manifest.json"), "r") as f:
             manifest = json.load(f)
         self.content_path = manifest["content-path"]
@@ -87,7 +92,7 @@ class Context:
         self._read_messages()
 
     def _read_items(self):
-        directory_path = "memory/sessions/" + self.session_id + "/items"
+        directory_path = self.project_root + "/memory/sessions/" + self.session_id + "/items"
         if not os.path.exists(directory_path):
             print(f"No such directory: {directory_path}")
             return
@@ -155,7 +160,7 @@ class Context:
     def log_message(self, message: PromptMessage):
         if self.persist_session == False:
             return
-        directory = "memory/sessions/" + self.session_id + "/messages"
+        directory = self.project_root + "/memory/sessions/" + self.session_id + "/messages"
         if not os.path.exists(directory):
             os.makedirs(directory)
         filepath = directory + "/log-" + message.message_id + ".json"
@@ -163,7 +168,7 @@ class Context:
             json.dump(message, f, indent=4, cls=CustomEncoder)
 
     def _read_messages(self):
-        directory = "memory/sessions/" + self.session_id + "/messages"
+        directory = self.project_root + "/memory/sessions/" + self.session_id + "/messages"
         if not os.path.exists(directory):
             return []
 
