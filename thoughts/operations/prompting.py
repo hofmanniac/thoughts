@@ -11,9 +11,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from thoughts.operations.thought import Thought
 
-class PromptOperation(Operation):
-    thought: 'Thought' = None
-
 class RunCondition(Enum):
     ALWAYS = auto()
     CONTINUATION = auto()
@@ -37,9 +34,6 @@ def format_content(content):
         return content
     else:
         return str(content)
-
-def get_first_moniker(json_snippet, monikers):
-    return next(moniker for moniker in monikers if moniker in json_snippet)  
 
 def create_moniker_mapping(base_class):
     from thoughts.operations.memory import SetItem
@@ -108,7 +102,7 @@ class MessageStarter(Operation):
                 role = json_snippet.get("role", "human")
             return cls(role=role, content=json_snippet[moniker])
     
-class Role(PromptOperation):
+class Role(Operation):
     """
     Start a new prompt.
 
@@ -124,8 +118,8 @@ class Role(PromptOperation):
         self.condition = None
         self.content = content
         self.file = file
-    def execute(self, context: Context, messages = None):
-        if not should_execute(context, self.run_condition, self.thought):
+    def execute(self, context: Context, messages = None, thought: 'Thought' = None):
+        if not should_execute(context, self.run_condition, thought):
             return messages, None
         message_starter = MessageStarter(role="system", content=self.content, file=self.file)
         return message_starter.execute(context, messages)
@@ -134,7 +128,7 @@ class Role(PromptOperation):
         if type(json_snippet) is str:
             return cls(content=json_snippet)
         elif type(json_snippet) is dict:
-            moniker = get_first_moniker(json_snippet, cls.monikers)
+            moniker = cls.get_first_moniker(json_snippet, cls.monikers)
             file = json_snippet.get("file", None)
             return cls(content=json_snippet[moniker], file=file)
         return None
@@ -151,7 +145,7 @@ class ContinueRole(Role):
     # def execute(self, context: Context, messages=None, thought_started: bool = False):
     #     return super().execute(context, messages, thought_started=thought_started)
     
-class IncludeContext(PromptOperation):
+class IncludeContext(Operation):
     monikers = ["Context", "IncludeContext"]
     run_condition = RunCondition.ALWAYS
     def __init__(self, title: str = None, content: str = None, from_item: str = None, file: str = None ):
@@ -160,9 +154,9 @@ class IncludeContext(PromptOperation):
         self.content = content
         self.from_item = from_item
         self.file = file
-    def execute(self, context: Context, messages = None):
+    def execute(self, context: Context, messages = None, thought: 'Thought' = None):
 
-        if not messages or not should_execute(context, self.run_condition, self.thought):         
+        if not messages or not should_execute(context, self.run_condition, thought):         
             return messages, None
         
         prompt_message: PromptMessage = messages[-1] if messages else None
@@ -187,7 +181,7 @@ class IncludeContext(PromptOperation):
         return messages, None
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = get_first_moniker(json_snippet, cls.monikers)
+        moniker = cls.get_first_moniker(json_snippet, cls.monikers)
         title = json_snippet.get(moniker, None)
         content = json_snippet.get("content", None)
         from_item = json_snippet.get("key", None)
@@ -219,7 +213,7 @@ class IncludeItem(IncludeContext):
         super().__init__(title=title, from_item=key)
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = get_first_moniker(json_snippet, cls.monikers)
+        moniker = cls.get_first_moniker(json_snippet, cls.monikers)
         title = json_snippet.get(moniker, None)
         key = json_snippet.get("key", None)
         return cls(title=title, key=key)
@@ -246,7 +240,7 @@ class IncludeFile(IncludeContext):
         super().__init__(title=title, file=file)
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = get_first_moniker(json_snippet, cls.monikers)
+        moniker = cls.get_first_moniker(json_snippet, cls.monikers)
         title = json_snippet.get(moniker, None)
         file = json_snippet.get("file", None)
         return cls(title=title, file=file)
@@ -263,7 +257,7 @@ class StartFile(IncludeFile):
     # def execute(self, context: Context, messages=None, thought_started: bool = False):
     #     return super().execute(context, messages, thought_started=thought_started)  
 
-class IncludeHistory(PromptOperation):
+class IncludeHistory(Operation):
     """
     Loads a specified number of recent messages from the context's message history 
     and appends them to an existing list of messages.
@@ -288,9 +282,9 @@ class IncludeHistory(PromptOperation):
     def __init__(self, num_messages: int = 4):
         self.condition = None
         self.num_messages = num_messages
-    def execute(self, context: Context, messages = None):
+    def execute(self, context: Context, messages = None, thought: 'Thought' = None):
 
-        if not should_execute(context, self.run_condition, thought=self.thought):       
+        if not should_execute(context, self.run_condition, thought=thought):       
             return messages, None
 
         message_history = context.peek_messages(self.num_messages)
@@ -300,7 +294,7 @@ class IncludeHistory(PromptOperation):
         return messages, None
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = get_first_moniker(json_snippet, cls.monikers)
+        moniker = cls.get_first_moniker(json_snippet, cls.monikers)
         return cls(num_messages=json_snippet[moniker])
     
 class StartHistory(IncludeHistory):
@@ -315,16 +309,16 @@ class ContinueHistory(IncludeHistory):
     # def execute(self, context: Context, messages=None, thought_started: bool = False):
     #     return super().execute(context, messages, thought_started=thought_started)
     
-class Instruction(PromptOperation):
+class Instruction(Operation):
     monikers = ["Instruction", "IncludeInstruction"]
     run_condition = RunCondition.ALWAYS
     def __init__(self, content: str = None, file: str = None):
         self.condition = None
         self.content = content
         self.file = file
-    def execute(self, context: Context, messages = None):
+    def execute(self, context: Context, messages = None, thought: 'Thought' = None):
         
-        if not should_execute(context, self.run_condition, thought=self.thought):       
+        if not should_execute(context, self.run_condition, thought=thought):       
             return messages, None
         
         if not messages:
@@ -343,7 +337,7 @@ class Instruction(PromptOperation):
 
     @classmethod
     def parse_json(cls, json_snippet, config):
-        moniker = get_first_moniker(json_snippet, cls.monikers)
+        moniker = cls.get_first_moniker(json_snippet, cls.monikers)
         content = json_snippet.get(moniker, None)
         return cls(content=content)
 
@@ -496,34 +490,41 @@ class PromptConstructor(Operation):
     def __init__(self, operations: list):
         self.condition = None
         self.operations = operations
-    def execute(self, context: Context, message = None):
+    def execute(self, context: Context, message = None, thought: 'Thought' = None):
         operation: Operation
         messages = []
         for operation in self.operations:
             if type(operation) is str:
                 operation = IncludeContext(content=operation)
-            messages, control = operation.execute(context, messages)
+            messages, control = operation.execute(context, messages, thought=thought)
         return messages, None
     @classmethod
-    def parse_json(cls, json_snippet, config, thought: 'Thought' = None):
+    def parse_json(cls, json_snippet, config):
+        
+        if json_snippet is None:
+            return None
+        
         ops = json_snippet
         operations = []
 
         moniker_mapping = create_moniker_mapping(Operation)
 
         for op in ops:
-            operation = None
+            operation: Operation = None
             
             if isinstance(op, str):
                 operation = IncludeContext(title=None, content=op)
             else:
-                moniker = get_first_moniker(op, moniker_mapping.keys())
-                operation_class = moniker_mapping.get(moniker)
+                moniker = cls.get_first_moniker(op, moniker_mapping.keys())
+                operation_class: Operation = moniker_mapping.get(moniker)
                 if operation_class:
                     operation = operation_class.parse_json(op, config)
-                    if isinstance(operation, PromptOperation):
-                        operation.thought = thought
+                    # if isinstance(operation, PromptOperation):
+                    #     operation.thought = thought
 
+            if operation is None:
+                continue
+            
             # if type(op) is str:
             #     operation = IncludeContext(title=None, content=op)
             

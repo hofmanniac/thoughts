@@ -1,8 +1,9 @@
 from thoughts.context import Context
 from thoughts.operations.core import Operation
 from thoughts.operations.routing import Choice
-from thoughts.operations.thought import Thought
+from thoughts.operations.thought import Express, Thought
 from thoughts.operations.console import ConsoleReader, ConsoleWriter
+from thoughts.parser import ConfigParser
 # from thoughts.operations.memory import MemoryKeeper, TextSplitter
 
 class Node:
@@ -111,7 +112,8 @@ class PipelineExecutor(Operation):
             # run the next operation
             current_node: Node = self.nodes[idx]
             context.logger("\t" + type(current_node).__name__, "cyan")
-            if not current_node.condition or current_node.condition(context):
+            # if not current_node.condition or current_node.condition(context):
+            if not current_node.condition:
                 result, control = current_node.execute(context, result)
                 if result is not None:
                     results.append(result)
@@ -140,39 +142,43 @@ class PipelineExecutor(Operation):
         if max_runs is not None and max_runs > 1:
             repeat = True
 
-        nodes = []
+        # nodes = []
 
-        for item in json_snippet["steps"]:
-            if "MessageReader" in item or "Ask" in item:
-                nodes.append(ConsoleReader.parse_json(item, config))
-            elif "MessageWriter" in item or "Write" in item:
-                nodes.append(ConsoleWriter.parse_json(item, config))
-            elif "Thought" in item:
-                nodes.append(Thought.parse_json(item, config))
-            elif "PipelineExecutor" in item or "Task" in item:
-                nodes.append(PipelineExecutor.parse_json(item, config))
-            elif "Choice" in item:
-                nodes.append(Choice.parse_json(item, config))
-            # if "think" in item or "PromptRunner" in item:
-            #     nodes.append(PromptRunner.parse_json(item, config))
-            # elif "communicate" in item:
-            #     nodes.append(PromptRunner.parse_json(item, config))
-            #     nodes.append(ConsoleWriter.parse_json(item, config))
-            # elif "remember" in item:
-            #     prompt_runner = PromptRunner.parse_json(item, config)
-            #     prompt_runner.append_history = False # internal thought vs. communication
-            #     nodes.append(prompt_runner)
-            #     nodes.append(MemoryKeeper.parse_json(item, config))
-            # elif "MemoryKeeper" in item:
-            #     nodes.append(MemoryKeeper.parse_json(item, config))
-            # elif "TextSplitter" in item:
-            #     nodes.append(TextSplitter.parse_json(item, config))
-            # elif "Analyze" in item:
-            #     nodes.append(AnalyzeMessages.parse_json(item, config))
-            # elif "recall" in item or "ContextMemoryAppender" in item:
-            #     nodes.append(ContextMemoryAppender.parse_json(item, config))
-            else:
-                # raise ValueError(f"Unknown component in PipelineExecutor: {item}")
-                print(f"Warning: Unknown component in PipelineExecutor: {item}")
+        nodes = ConfigParser.parse_operations(json_snippet["steps"], config)
+        
+        # for item in json_snippet["steps"]:
+        #     if "MessageReader" in item or "Ask" in item:
+        #         nodes.append(ConsoleReader.parse_json(item, config))
+        #     elif "MessageWriter" in item or "Write" in item:
+        #         nodes.append(ConsoleWriter.parse_json(item, config))
+        #     elif "Thought" in item:
+        #         nodes.append(Thought.parse_json(item, config))
+        #     elif "Express" in item:
+        #         nodes.append(Express.parse_json(item, config))
+        #     elif "PipelineExecutor" in item or "Task" in item:
+        #         nodes.append(PipelineExecutor.parse_json(item, config))
+        #     elif "Choice" in item:
+        #         nodes.append(Choice.parse_json(item, config))
+        #     # if "think" in item or "PromptRunner" in item:
+        #     #     nodes.append(PromptRunner.parse_json(item, config))
+        #     # elif "communicate" in item:
+        #     #     nodes.append(PromptRunner.parse_json(item, config))
+        #     #     nodes.append(ConsoleWriter.parse_json(item, config))
+        #     # elif "remember" in item:
+        #     #     prompt_runner = PromptRunner.parse_json(item, config)
+        #     #     prompt_runner.append_history = False # internal thought vs. communication
+        #     #     nodes.append(prompt_runner)
+        #     #     nodes.append(MemoryKeeper.parse_json(item, config))
+        #     # elif "MemoryKeeper" in item:
+        #     #     nodes.append(MemoryKeeper.parse_json(item, config))
+        #     # elif "TextSplitter" in item:
+        #     #     nodes.append(TextSplitter.parse_json(item, config))
+        #     # elif "Analyze" in item:
+        #     #     nodes.append(AnalyzeMessages.parse_json(item, config))
+        #     # elif "recall" in item or "ContextMemoryAppender" in item:
+        #     #     nodes.append(ContextMemoryAppender.parse_json(item, config))
+        #     else:
+        #         # raise ValueError(f"Unknown component in PipelineExecutor: {item}")
+        #         print(f"Warning: Unknown component in PipelineExecutor: {item}")
             
         return cls(name=name, nodes=nodes, loop=repeat, max_runs=max_runs)

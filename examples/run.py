@@ -1,32 +1,40 @@
-from datetime import datetime
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from datetime import datetime
 from thoughts.context import Context
 from thoughts.agent import Agent
 
-context = Context(content_path="game")
+def run_example(example):
+    agent = Agent()
 
-agent = Agent()
+    if example["name"] == "Chatbot":
+        session_id = datetime.now().strftime("%Y-%m-%d")
+        context = Context(session_id=session_id)
+    elif example["name"] == "Steampunk Game":
+        context = Context(content_path="games", persist_session=False)
+    else:
+        context = Context(persist_session=False)
 
-# agent.load_from_config(context, "examples/agents/comedians.json")
-# agent.execute(context, "Perform Act")
+    agent.load_from_config(context, example["path"])
+    agent.execute(context)
 
-# agent.load_from_config(context, "examples/game/game.json")
-# agent.load_from_config(context, "examples/agents/data-modeling-2.json")
-# agent.load_from_config(context, "examples/agents/politics.json")
-# agent.load_from_config(context, "examples/agents/story-ideas.json")
 
-# agent.load_from_config(context, "examples/games/dungeon.json")
-agent.load_from_config(context, "examples/games/spaceship.json")
+examples = [
+    
+    {"name": "Pirate Chatbot", "path": "examples/chatbots/pirate-bot.json"},
+    {"name": "Chatbot", "path": "examples/chatbots/chatbot.json"},
 
-# pirate chatbot (simple)
-# agent.load_from_config(context, "examples/chatbots/pirate-bot.json")
+    {"name": "Dungeon Game", "path": "examples/games/dungeon.json"},
+    {"name": "Spaceship Game", "path": "examples/games/spaceship.json"},
+    {"name": "Steampunk Game", "path": "examples/games/game.json"},
 
-# chatbot (more complex)
-# session_id = datetime.now().strftime("%Y-%m-%d")
-# # context = Context(content_path="chat", session_id=session_id)
-# context = Context(session_id=session_id)
-# agent.load_from_config(context, "examples/chatbots/chatbot-3.json")
+    {"name": "Comedians", "path": "examples/workflow/comedians.json"},
+    {"name": "Data Modeling", "path": "examples/workflow/data-modeling.json"},
+    {"name": "Politics", "path": "examples/workflow/politics.json"},
+    {"name": "Story Ideas", "path": "examples/workflow/story-ideas.json"}
+]
 
-agent.execute(context)
+choice = input("Choose an example to run:\n" + "\n".join([f"{i+1}. {e['name']}" for i, e in enumerate(examples)]) + "\n\n: ")
+example = examples[int(choice)-1]
+run_example(example)

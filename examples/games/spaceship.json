@@ -5,7 +5,7 @@
     
         {"Task": "Run Game", "repeat": true, "steps": [
 
-            {"Thought": "React to Player", "train": [
+            {"Express": "React to Player", "train": [
                 {"Role": "You are a game master."},
                 "The goal of the game is for the player to repair the spaceship or to escape.",
                 "Do not make up actions on behalf of the player, let them decide what to do at each step.",
@@ -15,7 +15,6 @@
                 {"StartInstruction": "The player starts out in the broken down spaceship."},
                 {"StartInstruction": "Start out by describing the overall scene. Then ask the player what they want to do next."}
             ]},
-            {"Write": "AI"},
 
             {"Thought": "Summarize Progress", "into": "Game Summary", "runEvery": 4, "train": [
                 {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
@@ -26,5 +25,9 @@
 
             {"Ask": "YOU:"}
         ]}
-    ]
+    ],
+
+    "Channels": {
+        "Default": [{"Write": "GM", "speed": 0.01}]
+    }
 }

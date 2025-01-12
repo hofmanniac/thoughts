@@ -3,14 +3,14 @@
 
     "Behaviors": [
         {"Task": "Perform Act", "repeat": true, "maxRuns": 3, "steps": [
-            {"Thought": "Joe", "output": true, "train": [
+            {"Express": "Joe", "output": true, "train": [
                 {"Role": "Your name is Joe and you are part of a duo of comedians."},
                 {"Start": "Introduce yourself."},
                 {"Continue": "Make a comment riffing off of the previous joke, and then tell a joke of your own."},
                 {"History": 4},
                 {"StartInstruction": "Tell a joke to get things started."}
             ]},
-            {"Thought": "Cathy", "output": true, "train": [
+            {"Express": "Cathy", "output": true, "train": [
                 {"Role": "Your name is Cathy and you are part of a duo of comedians."},
                 "Make a comment riffing off of the previous joke, and then tell a joke of your own.",
                 {"History": 4}

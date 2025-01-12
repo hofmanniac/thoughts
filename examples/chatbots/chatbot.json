@@ -5,20 +5,16 @@
         
         {"Task": "Chat", "repeat": false, "steps": [
 
-            {"Write": {"History": 1}},
-
             {"Choice": "Start or Continue Chat", "options": [
-                {"When": {"LastMessage": "Human"}, "Then": [{"Thought": "React"}]},
-                {"When": {"HasValue": "Follow Ups"}, "Then": [{"Thought": "Follow Up"}]},
-                {"Thought": "Initiate"}
+                {"When": {"LastMessage": "Human"}, "Then": [{"Express": "React"}]},
+                {"When": {"LastMessage": "AI"}, "Then": [{"Write": {"History": 1}}]},
+                {"When": {"HasValue": "Follow Ups"}, "Then": [{"Express": "Follow Up"}]},
+                {"Express": "Initiate"}
             ]},
-
-            {"When": {"LastMessage": "AI"}, "Then": [{"Write": "AI:"}]},
             
             {"Task": "Chat Loop", "repeat": true, "steps": [
                 {"Ask": "YOU:"},
-                {"Thought": "React"},
-                {"Write": "AI:"},
+                {"Express": "React"},
                 {"Thought": "Summarize"}
             ]}
         ]},
@@ -30,6 +26,10 @@
             ]}
         ]}
     ],
+
+    "Channels": {
+        "Default": [{"Write": "BOT:", "speed": 0.01}]
+    },
 
     "Thoughts": {
 

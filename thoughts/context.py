@@ -37,6 +37,9 @@ class Context:
         # run these after the load to override with the values passed in
         self.content_path = content_path
         self.persist_session = persist_session
+
+        if self.persist_session:
+            self.persist()
     
     def _object_hook(self, data):
         if '__class__' in data:

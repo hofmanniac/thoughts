@@ -61,6 +61,10 @@
         ]}
     ],
 
+    "Channels": {
+        "Default": [{"Write": "GM", "speed": 0.01}]
+    },
+
     "Items":
     [
         {"Quest Overview": "The player embarks on their journey by seeking out a legendary airship captain who is rumored to possess a map that reveals the first clue to the location of the fabled island of Elysium. This quest will involve tracking down the captain, gaining his trust, and ultimately obtaining the map."}

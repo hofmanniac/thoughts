@@ -9,21 +9,21 @@
 
             {"Task": "Debate", "repeat": true, "maxRuns": 2, "steps": [
 
-                {"Thought": "Liberal Position", "output": true, "train": [
+                {"Express": "Liberal Position", "output": true, "train": [
                     {"Role": "Your name is Joe and you represent the liberal position."},
                     {"Continue": "Make a comment acknowledging what the other person said but then provide an argument against their position."},
                     {"History": 8},
                     {"StartInstruction": "Begin making your argument for or against an aspect of the topic."}
                 ]},
 
-                {"Thought": "Conservative Position", "output": true, "train": [
+                {"Express": "Conservative Position", "output": true, "train": [
                     {"Role": "Your name is Cathy and you represent the conservative position."},
                     {"Context": "Make a comment acknowledging what the other person said but then provide an argument against their position."},
                     {"History": 8}
                 ]}
             ]},
 
-            {"Thought": "Reporting", "output": true, "train": [
+            {"Express": "Reporting", "output": true, "train": [
                 {"Role": "Your name is Barry and you are the reporter."},
                 {"History": 8},
                 {"Instruction": "Summarize the key points of the debate into a single bulleted list."}

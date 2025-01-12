@@ -55,5 +55,9 @@
             "5. Hall of Echoes - There is a mirror here that will show the player a vision of the future. Exits are to the east (Cave Entrance).", 
             "6. Doom Room - The treasure is located here. The room is guarded by a bugbear."
         ]}
-    ]
+    ],
+
+    "Channels": {
+        "Default": [{"Write": "GM", "speed": 0.01}]
+    }
 }
