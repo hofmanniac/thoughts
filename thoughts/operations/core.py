@@ -4,10 +4,11 @@ from thoughts.context import Context
 
 class Operation():
     monikers = []
+    condition = None
     def __init__(self, name: str = None, description: str = None):
         self.name = name
         self.description = description
-        self.condition = True
+        self.condition = None
 
     def get_first_moniker(json_snippet, monikers):
         return next((moniker for moniker in monikers if moniker in json_snippet), None)  

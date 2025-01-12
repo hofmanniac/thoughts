@@ -5,6 +5,7 @@ from thoughts.context import Context
 from typing import List
 from thoughts.parser import ConfigParser
 from thoughts.unification import unify
+import re
 
 # from typing import TYPE_CHECKING
 # if TYPE_CHECKING:
@@ -86,6 +87,33 @@ class LastMessage(Operation):
             return last_message, True
         return last_message, False
     
+class TextMatchCondition(Operation):
+    def __init__(self, text: str, case_sensitive: bool = False, use_regex: bool = False):
+        self.text = text
+        self.case_sensitive = case_sensitive
+        self.use_regex = use_regex
+
+    def execute(self, context: Context, message = None):
+        test_value = None
+        if type(message) is str:
+            test_value = message
+        elif isinstance(message, PromptMessage):
+            test_value = message.content
+
+        comparison_text = self.text
+        comparison_value = test_value
+
+        if not self.case_sensitive:
+            comparison_text = comparison_text.lower()
+            comparison_value = comparison_value.lower()
+
+        if self.use_regex:
+            truth = bool(re.search(comparison_text, comparison_value))
+        else:
+            truth = comparison_text == comparison_value
+
+        return self.text, truth
+        
 class FactAsserter(Operation):
     def __init__(self, fact: dict):
         self.fact = fact
@@ -96,7 +124,18 @@ class FactAsserter(Operation):
 class RulesRunner(Operation):
     
     def __init__(self, rules: list = []):
-        self.rules = rules
+
+        parsed_rules = []
+        for rule in rules:
+            if type(rule) is dict:
+                rule = LogicRule.parse_json(rule, {})
+                parsed_rules.append(rule)
+            elif isinstance(rule, LogicRule):    
+                parsed_rules.append(rule)
+            else:
+                raise ValueError("RulesRunner can only accept LogicRule instances or dicts.")
+        self.rules = parsed_rules
+
         from thoughts.operations.workflow import PipelineExecutor
         self.executor = PipelineExecutor()
     
@@ -112,3 +151,7 @@ class RulesRunner(Operation):
             self.executor.execute(context, actions)
 
         return None, None
+    def parse_json(cls, json_snippet, config) -> 'RulesRunner':
+        rules_config = json_snippet.get("rules", [])
+        rules = ConfigParser.parse_operations(rules_config, config)
+        return cls(rules)

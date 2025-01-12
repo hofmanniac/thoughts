@@ -77,7 +77,14 @@ class ConsoleWriter(Operation):
             else:
                 last_message = context.get_last_message()
 
-        last_message.print_content(self.typing_speed)
+        if type(last_message) is str:
+            last_message = thoughts.interfaces.messaging.AIMessage(content=last_message)
+        
+        if type(last_message) is list:
+            for msg in last_message:
+                print(msg)
+        else:
+            last_message.print_content(self.typing_speed)
 
         return None, None
     
