@@ -1,0 +1,43 @@
+{
+  "name": "Rule Tests",
+  
+  "Behaviors": [
+    
+    {"Task": "Test Rules", "events": [
+      
+      {"When": "Hello", "Then": { "Write": "Hello, world!" } },  
+      {"When": "Hi", "Then": "Hi there" },
+      {"When": "My name is ?name", "Then": "Nice to meet you, ?name" },
+      {"When": "Find item", "Then": {"Write": "$oxygen.atomic-number"} },
+      
+      {"When": "Test load", "Then": [
+        {"FetchFeed": "$digg.top", "into": "rss" },
+        {"#save-json": "test-load.json", "from": "rss" },
+        {"#load-json": "test-load.json", "into": "rss2" },
+        {"Write": "$rss2.title" }
+      ]},
+            
+      {"When": "ask me", "Then": [
+        {"Ask": "how are you?", "into": "$feeling" },
+        {"Write": "you are $feeling" }
+      ]},
+      
+      {"When": "rss ?feed", "Then": [
+        {"FetchFeed": "$?feed", "into": "$rss" },
+        {"Write": "$rss.title" }
+      ]},
+      
+      {"When": { "answer": "?answer" }, "Then": { "Write": "answer is ?answer" }}]}
+  ],
+
+  "Items": {
+    "cnn": {
+      "tech": "http://rss.cnn.com/rss/cnn_tech.rss", 
+      "top": "http://rss.cnn.com/rss/cnn_topstories.rss"},
+    "digg": {"top": "https://digg.com/rss/top.rss"},
+    "oxygen": {"atomic-number": "8", "atomic-weight": "15.999"},
+    "memory": ["my name is chat-e"],
+    "self": {"name": "chat-e" }
+  }
+
+}
