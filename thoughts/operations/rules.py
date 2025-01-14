@@ -1,4 +1,6 @@
 from copy import deepcopy
+import json
+import os
 from thoughts.interfaces.messaging import PromptMessage
 from thoughts.operations.core import Operation
 from thoughts.context import Context
@@ -27,7 +29,7 @@ class LogicRule(Operation):
         self.supress_execution = supress_execution
     def execute(self, context: Context, message):
         _, truth = self.condition.execute(context, message)
-        self.execute_actions(context, truth, message)
+        return self.execute_actions(context, truth, message)
     def execute_actions(self, context: Context, truth: bool, message = None):
         actions = []
         if truth:
@@ -48,7 +50,7 @@ class LogicRule(Operation):
             final_result = result[0] if len(result) == 1 else result
             return final_result, control
     @classmethod
-    def parse_json(cls, json_snippet, config):
+    def parse_json(cls, json_snippet, config = None):
         condition_config = json_snippet.get("When", None)
         condition = ConfigParser.parse_logic_condition(condition_config)
         actions_config = json_snippet.get("Then", [])
@@ -114,44 +116,67 @@ class TextMatchCondition(Operation):
 
         return self.text, truth
         
-class FactAsserter(Operation):
-    def __init__(self, fact: dict):
+class Assertion(Operation):
+    def __init__(self, fact = None):
         self.fact = fact
-        self.condition = None
     def execute(self, context: Context, message):
         return self.fact, None
-        
-class RulesRunner(Operation):
+    @classmethod
+    def parse_json(cls, json_snippet, config = None) -> 'Assertion':
+        fact = json_snippet.get("Assert", json_snippet)
+        return cls(fact=fact)
+      
+class RulesOrchestrator(Operation):
     
-    def __init__(self, rules: list = []):
+    def __init__(self, rules: list = [], context: Context = None):
+        super().__init__(context=context)
 
-        parsed_rules = []
+        self.rules = []
         for rule in rules:
-            if type(rule) is dict:
-                rule = LogicRule.parse_json(rule, {})
-                parsed_rules.append(rule)
-            elif isinstance(rule, LogicRule):    
-                parsed_rules.append(rule)
-            else:
-                raise ValueError("RulesRunner can only accept LogicRule instances or dicts.")
-        self.rules = parsed_rules
+            self.add_rule(rule)
 
         from thoughts.operations.workflow import PipelineExecutor
         self.executor = PipelineExecutor()
     
-    def add_rule(self, rule: LogicRule):
+    def add_rule(self, rule):
+        if type(rule) is dict:
+            rule = LogicRule.parse_json(rule, {})
         self.rules.append(rule)
 
+    def add_rules(self, rules: list):
+        for rule in rules:
+            self.add_rule(rule)
+
+    # load rules from a .json file
+    def load_rules_from_file(self, file: str, name = None):
+        
+        if (file.startswith("\\")):
+            dir = os.path.dirname(__file__)
+            file = dir + file
+
+        with open(file) as f:
+            file_rules = list(json.load(f))
+            self.add_rules(file_rules)
+            print("loaded", len(file_rules), "rules")
+            
     def execute(self, context=None, message=None):
+        result = []
+        context = self.resolve_context(context)
         rule: LogicRule
         for rule in self.rules:
-            actions = rule.execute(context, message)
-            if actions is None:
+            actions, _ = rule.execute(context, message)
+            if actions is None or (type(actions) is list and len(actions) == 0):
                 continue
+            result.append(actions)
             self.executor.execute(context, actions)
-
-        return None, None
-    def parse_json(cls, json_snippet, config) -> 'RulesRunner':
+        return result, None
+    
+    def process(self, message=None, context: Context=None):
+        result, _ = self.execute(context, message)
+        return result
+    
+    @classmethod
+    def parse_json(cls, json_snippet, config) -> 'RulesOrchestrator':
         rules_config = json_snippet.get("rules", [])
         rules = ConfigParser.parse_operations(rules_config, config)
         return cls(rules)

@@ -92,14 +92,24 @@ class ConsoleWriter(Operation):
     def parse_json(cls, json_snippet, config):
         # moniker = "Ask" if "Ask" in json_snippet else "MessageWriter"
         
-        moniker_value = json_snippet.get("Write", None)
-        message_provider_config = moniker_value if type(moniker_value) is dict else None
+        # message_provider = "#" # default to last message
         message_provider = None
-        if message_provider_config is not None:
+        moniker_value = json_snippet.get("Write", None)
+        if type(moniker_value) is str and moniker_value != "#":
+            text = moniker_value
+        elif type(moniker_value) is dict:
             from thoughts.parser import ConfigParser
-            message_provider = ConfigParser.parse_operation(config, message_provider_config)
+            message_provider = ConfigParser.parse_operation(moniker_value, config)
+
+        # message_provider_config = moniker_value if type(moniker_value) is dict else None
+        # if message_provider_config is not None:
+        #     from thoughts.parser import ConfigParser
+        #     message_provider = ConfigParser.parse_operation(config, message_provider_config)
+        # else:
 
         from_item = json_snippet.get("from", None)
         typing_speed = json_snippet.get("speed", 0.02)
-        
-        return cls(from_item=from_item, typing_speed=typing_speed, message_provider=message_provider)
+        # text = json_snippet.get("text", None)
+
+        return cls(from_item=from_item, typing_speed=typing_speed, 
+                   message_provider=message_provider, text=text)

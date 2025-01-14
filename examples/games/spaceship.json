@@ -28,6 +28,6 @@
     ],
 
     "Channels": {
-        "Default": [{"Write": "GM", "speed": 0.01}]
+        "Default": [{"Write": "#", "prompt": "GM", "speed": 0.01}]
     }
 }

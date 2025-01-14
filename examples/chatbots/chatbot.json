@@ -28,7 +28,7 @@
     ],
 
     "Channels": {
-        "Default": [{"Write": "BOT:", "speed": 0.01}]
+        "Default": [{"Write": "#", "prompt": "BOT:", "speed": 0.01}]
     },
 
     "Thoughts": {

@@ -3,7 +3,7 @@
   
   "Behaviors": [
     
-    {"Task": "Test Rules", "events": [
+    {"Orchestrate": "Test Rules", "rules": [
       
       {"When": "Hello", "Then": { "Write": "Hello, world!" } },  
       {"When": "Hi", "Then": "Hi there" },

@@ -5,7 +5,7 @@
 
         {"Task": "Run Game", "repeat": false, "steps": [
 
-            {"Thought": "Start", "train": [
+            {"Express": "Start", "train": [
                 {"Role": "You are a dungeon master."},
                 {"Context": "The goal of the game is for the player to find the lost treasure."},
                 {"Item": "Encounters"},
@@ -14,13 +14,12 @@
                 {"StartInstruction": "Let's begin!"}
                 ]
             },
-            {"Write": "AI:"},
             
             {"Task": "Ongoing Interactions", "repeat": true, "steps": [
 
                 {"Ask": "YOU:"},
 
-                {"Thought": "Interact", "train": [
+                {"Express": "Interact", "train": [
                     {"Role": "You are a dungeon master."},
                     {"Context": "The goal of the game is for the player to find the lost treasure."},
                     {"Item": "Encounters"},
@@ -30,7 +29,6 @@
                     "Do not make up actions on behalf of the player, let them decide what to do.",
                     {"History": 4}
                 ]},
-                {"Write": "AI:"},
 
                 {"Thought": "Game Summary", "into": "Game Summary", "runEvery": 4, "train": [
                     {"Role": "You are the memory system for a game agent. You will keep track of the game's progress."},
@@ -58,6 +56,6 @@
     ],
 
     "Channels": {
-        "Default": [{"Write": "GM", "speed": 0.01}]
+        "Default": [{"Write": "#", "prompt": "GM", "speed": 0.01}]
     }
 }

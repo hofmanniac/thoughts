@@ -1,18 +1,19 @@
 
-from thoughts.operations.prompting import IncludeHistory
-
-
 class ConfigParser():
 
-    def parse_operation(config: dict, operation_config: dict):
+    def parse_operation(operation_config: dict, config: dict):
         from thoughts.operations.console import ConsoleReader, ConsoleWriter
         from thoughts.operations.routing import Choice, LLMRoutingAgent
         from thoughts.operations.thought import Express, Thought
         from thoughts.operations.workflow import PipelineExecutor
-        from thoughts.operations.rules import LogicRule
-        from thoughts.operations.web import FetchFeed
-
-        if "Thought" in operation_config:
+        from thoughts.operations.rules import LogicRule, Assertion
+        from thoughts.interfaces.web import FetchFeed
+        from thoughts.operations.prompting import IncludeHistory
+        
+        if type(operation_config) is str:
+            operation_config = {"Assert": operation_config}
+            return Assertion.parse_json(operation_config, config)
+        elif "Thought" in operation_config:
             return Thought.parse_json(operation_config, config)
         elif "Choice" in operation_config:
             return Choice.parse_json(operation_config, config)
@@ -32,14 +33,21 @@ class ConfigParser():
             return IncludeHistory.parse_json(operation_config, config)
         elif "FetchFeed" in operation_config:         
             return FetchFeed.parse_json(operation_config, config)
+        elif "Assert" in operation_config:
+            return Assertion.parse_json(operation_config, config)
         else:
-            # raise ValueError(f"Unknown component in PipelineExecutor: {operation_config}")
-            print(f"Unknown component in PipelineExecutor: {operation_config}")
+            operation_config = {"Assert": operation_config}
+            return Assertion.parse_json(operation_config, config)
 
-    def parse_operations(node_config: list, config: dict):
+            # raise ValueError(f"Unknown component in PipelineExecutor: {operation_config}")
+            # print(f"Unknown component in PipelineExecutor: {operation_config}")
+
+    def parse_operations(node_config: list, config: dict = None):
+        if type(node_config) is not list:
+            node_config = [node_config]
         operations = []
         for item in node_config:
-            operation = ConfigParser.parse_operation(config, item)
+            operation = ConfigParser.parse_operation(item, config)
             operations.append(operation)
         return operations
     

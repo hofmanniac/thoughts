@@ -18,6 +18,6 @@
     ],
 
     "Channels": {
-        "Default": [{"Write": "Pirate", "speed": 0.01}]
+        "Default": [{"Write": "#", "prompt": "Pirate", "speed": 0.01}]
     }
 }
