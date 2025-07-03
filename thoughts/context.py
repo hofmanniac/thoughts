@@ -33,7 +33,7 @@ class Context:
                 # Get the directory of the current script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         # Construct the path to the root of the project
-        self.project_root = os.path.abspath(os.path.join(script_dir, "../.."))
+        self.project_root = os.path.abspath(os.path.join(script_dir, ".."))
 
         session_path = self.project_root + "/memory/sessions/" + self.session_id
         if os.path.exists(session_path):

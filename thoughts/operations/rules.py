@@ -113,6 +113,11 @@ class TextMatchCondition(Operation):
             truth = bool(re.search(comparison_text, comparison_value))
         else:
             truth = comparison_text == comparison_value
+            from thoughts.unifier import Unification
+            unification = Unification.unify_text(comparison_text, comparison_value)
+            if unification is not None:
+                truth = True
+            return unification, truth
 
         return self.text, truth
         

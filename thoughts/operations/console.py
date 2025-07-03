@@ -1,6 +1,8 @@
+import threading
 from thoughts.operations.core import Operation
 import thoughts.interfaces.messaging
 from thoughts.context import Context
+from thoughts.interfaces.speech import speak
 
 class ConsoleReader(Operation):
     monikers = ["ConsoleReader", "Ask"]
@@ -59,6 +61,16 @@ class ConsoleWriter(Operation):
         self.typing_speed = typing_speed
         self.condition = None
         self.from_item = from_item
+        self.console_done = threading.Event()
+        self.speak_done = threading.Event()
+    
+    def run_console_type(self, line, typing_speed):
+        thoughts.interfaces.messaging.console_type(text=line, typing_speed=typing_speed)
+        self.console_done.set()  # Signal that console typing is done
+
+    def run_speak(self, line):
+        speak(line, voice="af_nicole")
+        self.speak_done.set()  # Signal that speaking is done
 
     def execute(self, context: Context, message = None):
 
@@ -84,7 +96,31 @@ class ConsoleWriter(Operation):
             for msg in last_message:
                 print(msg)
         else:
-            last_message.print_content(self.typing_speed)
+            text = last_message.content
+            lines = text.split("\n")
+            
+            # Clear events at the beginning of each iteration
+            self.console_done.clear()
+            self.speak_done.clear()
+
+            for line in lines:
+                # print(f'{last_message.speaker}:', end=" ")
+                # thoughts.interfaces.messaging.console_type(text=line, typing_speed=self.typing_speed)
+                # speak(line, voice="af_nicole")
+                # Create threads for console typing and speaking
+                console_thread = threading.Thread(target=self.run_console_type, args=(line, self.typing_speed))
+                speak_thread = threading.Thread(target=self.run_speak, args=(line,))
+
+                # Start both threads
+                console_thread.start()
+                speak_thread.start()
+
+                # Optionally, wait for both threads to finish if needed (remove these if you want them to run asynchronously)
+                # self.console_done.wait()
+                # self.speak_done.wait()
+
+                console_thread.join()
+                speak_thread.join()
 
         return None, None
     
@@ -95,8 +131,9 @@ class ConsoleWriter(Operation):
         # message_provider = "#" # default to last message
         message_provider = None
         moniker_value = json_snippet.get("Write", None)
+        text = None
         if type(moniker_value) is str and moniker_value != "#":
-            text = moniker_value
+            text = moniker_value 
         elif type(moniker_value) is dict:
             from thoughts.parser import ConfigParser
             message_provider = ConfigParser.parse_operation(moniker_value, config)
