@@ -1,0 +1,14 @@
+{
+	"data-path": "examples",
+
+	"llm-platform": "openai",
+
+	"openai": {
+		"type": "cloud",
+		"key": "YOUR-KEY",
+		"endpoint": "https://YOUR-URL",
+		"model": "YOUR-MODEL-VERSION",
+		"deployment": "YOUR-DEPLOYMENT-NAME",
+		"stream": false
+	}
+}

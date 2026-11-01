@@ -1,7 +1,7 @@
 {
     "name": "Political Debate",
 
-    "Behaviors": [
+    "Steps": [
         
         {"Task": "Debate and Analyze", "repeat": false, "steps": [
             

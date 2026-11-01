@@ -1,0 +1,23 @@
+{
+    "name": "Default",
+
+    "Behaviors": [
+
+        {"Task": "Chat", "repeat": true, "steps": [
+
+            {"Express": "Assistant", "train": [
+                {"Role": "You are a helpful AI assistant."},
+                {"Continue": "1. If the user asks a question, answer it. If you don't know the answer to the question then indicate that you do not know."},
+                {"Continue": "2. If the user makes a statement, make a positive or helpful comment about what they said."},
+                {"Continue": "3. Always end your response with a follow up question about the user's statement to deeper your understanding."},
+                {"History": 4},
+                {"StartInstruction": "Begin with a friendly greeting and ask the user in general how they are doing."}
+            ]},
+            {"Ask": "YOU:"}
+        ]}
+    ],
+
+    "Channels": {
+        "Default": [{"Write": "#", "prompt": "BOT:", "speed": 0.01}]
+    }
+}

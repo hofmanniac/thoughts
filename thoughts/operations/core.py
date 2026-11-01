@@ -2,8 +2,9 @@ from abc import abstractmethod
 from thoughts.context import Context
 
 class OperationResult():
-    result = None
-    control = True
+    def __init__(self, messages = [], control = True):
+        self.messages = messages
+        self.control = control
 
 class Operation():
     
@@ -27,10 +28,10 @@ class Operation():
     
     @abstractmethod
     def should_execute(self, context: Context, message = None):
-        return self.condition
+        return self.condition if self.condition else True
 
     @abstractmethod
-    def execute(self, context: Context, message = None):
+    def execute(self, context: Context, message = None) -> OperationResult:
         pass
 
     @abstractmethod

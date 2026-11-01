@@ -1,7 +1,7 @@
 {
     "name": "Game Agent",
 
-    "Behaviors": [
+    "Steps": [
 
         {"Task": "Run Game", "repeat": false, "steps": [
 

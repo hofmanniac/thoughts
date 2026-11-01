@@ -1,7 +1,7 @@
 {
     "name": "Comedians",
 
-    "Behaviors": [
+    "Steps": [
         {"Task": "Perform Act", "repeat": true, "maxRuns": 3, "steps": [
             {"Express": "Joe", "output": true, "train": [
                 {"Role": "Your name is Joe and you are part of a duo of comedians."},

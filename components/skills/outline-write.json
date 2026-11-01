@@ -1,0 +1,23 @@
+{
+    "Name": "Outline and Write",
+
+    "Behaviors": [
+        {"When": {"Type": "Request", "Then": "Outline"}},
+        {"When": {"Type": "Outline", "Then": "Writer"}}
+    ],
+
+    "Thoughts": [
+
+        {"Think": "Outline", "Steps": [
+            {"Role": "You are a helpful AI assistant that creates outlines."},
+            {"Instruction": "Outline the key points from the user's request in a numbered list. Keep it brief."},
+            {"History": 1}
+        ]},
+
+        {"Think": "Writer", "Steps": [
+            {"Role": "You are a helpful AI assistant that writes content."},
+            {"Instruction": "Write a paragraph for each of the items in the outline. Keep it brief."},
+            {"History": 1}
+        ]}
+    ]
+}

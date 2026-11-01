@@ -1,7 +1,7 @@
 {
     "name": "Data Modeling",
 
-    "Behaviors": [
+    "Steps": [
         
         {"Task": "Brainstorm and Summarize", "repeat": false, "steps": [
             
@@ -21,7 +21,7 @@
                     {"Role": "You are a data modeler for federal mission-specific applications."},
                     {"Context": "Create or enhance the data model based on the provided information in the business process. Include as many tables and fields as possible based on known US Federal forms that apply for the use case."},
                     {"Context": "Do not include tables or fields for Compliance, Analytics, Reporting, User Interface, User Permissions, User Experience, User Roles, Audit Logs, or Audit Trails. Do not include Implementation Notes."},
-                    {"Context": "Prefix the table and field schema names with govcdm_. Assume all tables and fields will be implemeted in Power Apps using Dataverse."},
+                    {"Context": "Prefix the table and field schema names with govcdm_. Assume all tables and fields will be implemented in Power Apps using Dataverse."},
                     {"History": 3}
                 ]}
             ]},

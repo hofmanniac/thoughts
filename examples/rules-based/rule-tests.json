@@ -1,7 +1,7 @@
 {
   "name": "Rule Tests",
   
-  "Behaviors": [
+  "Steps": [
     
     {"Orchestrate": "Test Rules", "rules": [
       

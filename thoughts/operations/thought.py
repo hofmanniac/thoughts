@@ -2,7 +2,7 @@
 import datetime
 from thoughts.context import Context
 from thoughts.operations.console import ConsoleWriter
-from thoughts.operations.core import Operation
+from thoughts.operations.core import Operation, OperationResult
 from thoughts.interfaces.messaging import HumanMessage, SystemMessage
 from thoughts.operations.prompting import PromptConstructor
 from thoughts.parser import ConfigParser
@@ -132,7 +132,7 @@ class Thought(Operation):
         # Mark as started (after first run)
         self.started = True
 
-        return ai_message, None
+        return OperationResult(messages=[ai_message], control=None)
 
     @classmethod
     def parse_json(cls, json_snippet, config):
@@ -142,7 +142,7 @@ class Thought(Operation):
         name = json_snippet.get(moniker, None)
 
         # determine if thought definition is inline or in the config
-        train_config = json_snippet.get("train", None)
+        train_config = json_snippet.get("Steps", None)
         # thought is defined in the config
         if train_config is None:
             # get the config thought definitions
@@ -152,7 +152,7 @@ class Thought(Operation):
                 thought_config = config_thoughts.get(name, None)
                 # set the thought name
                 thought_config[moniker] = name
-                train_config = thought_config["train"]
+                train_config = thought_config["Steps"]
         # thought is defined inline
         else:
             thought_config = json_snippet

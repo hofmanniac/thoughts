@@ -1,28 +1,28 @@
 import json
 from thoughts.context import Context
-from thoughts.operations.core import Operation
+from thoughts.operations.core import Operation, OperationResult
 from thoughts.operations.routing import Choice
+from thoughts.operations.thought import Express
 from thoughts.operations.workflow import PipelineExecutor
+from thoughts.parser import ConfigParser
 
 class Agent(Operation):
+    
     def __init__(self):
-        self.behaviors = []
+        self.steps = []
 
-    def load_from_config(self, context: Context, config_path):
+    def load_from_config(context: Context, config_path):
         
         with open(config_path, 'r') as file:
             config = json.load(file)
 
-        self.name = config.get("name", "Unnamed Agent")
+        agent = Agent()
+        agent.name = config.get("name", "")
         
-        behaviors = config.get("Behaviors", [])
-        for behavior in behaviors:
-            if "Task" in behavior:
-                task = PipelineExecutor.parse_json(behavior, config)
-                self.behaviors.append(task)
-            elif "Choice" in behavior:
-                choice = Choice.parse_json(behavior, config)
-                self.behaviors.append(choice)
+        steps = config.get("Steps", [])
+        for step_config in steps:
+            step = ConfigParser.parse_operation(step_config, config)
+            agent.steps.append(step)
 
         items = config.get("Items", [])
         # Set each item in the context using the first property as the item name and value
@@ -32,14 +32,14 @@ class Agent(Operation):
                     context.set_item(key, value)
                     break  # Only use the first property
 
-    def execute(self, context: Context, message = None):
-        behavior_name = message
-        behavior: Operation
+        return agent
 
-        if message is not None:
-            for behavior in self.behaviors:
-                if behavior.name == behavior_name:
-                    behavior.execute(context, None) # message is used only to select the behavior
-        else:
-            behavior = self.behaviors[0]
-            behavior.execute(context, None)
+    def execute(self, context: Context, message = None) -> OperationResult:
+        results = []
+        step: Operation
+        for step in self.steps:
+            if not step.should_execute(context, message):
+                continue
+            operation_result = step.execute(context, message)
+            results.extend(operation_result.messages)
+        return OperationResult(messages=results, control=None)

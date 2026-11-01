@@ -1,6 +1,5 @@
 /.ipynb_checkpoints
 /.venv
-/.venv2
 /.vscode
 /build
 /dist
@@ -11,20 +10,21 @@ __pycache__
 /rules
 samples/private
 examples/private
-examples/temp/*
-/temp
+.temp
 /thoughts.code-workspace
 /thoughts.egg-info
 /thoughts/__pycache__
 /thoughts/commands/__pycache__
 /thoughts/__init__.py
 /thoughts/commands/__init__.py
-/test.py
 
-config.json
+.archive/
+.config/
 test.html
 tester.py
 my_test.py
 my_*.*
 private.py
 /projects
+
+*.dev.json

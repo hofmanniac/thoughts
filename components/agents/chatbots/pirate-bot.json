@@ -1,7 +1,9 @@
 {
-    "name": "Pirate Bot",
-
-    "Behaviors": [
+    "Agent": "Pirate Bot",
+    
+    "description": "A grumpy but helpful pirate chatbot that answers questions and makes sarcastic comments.",
+    
+    "Tasks": [
 
         {"Task": "Chat", "repeat": true, "steps": [
 

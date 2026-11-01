@@ -1,3 +1,4 @@
+from typing import List
 import thoughts.unification as unification
 import uuid
 from time import time
@@ -24,7 +25,7 @@ class Context:
         self.items = {}
         self.llm = llm if llm is not None else LLM()
         self.memory = memory if memory is not None else Memory()
-        self.messages = []
+        self.messages: List = []
         self.session_id = session_id if session_id is not None else str(uuid.uuid4())
         self.memory_module = MemoryModule()
         self.logs = []

@@ -109,18 +109,18 @@ class ConsoleWriter(Operation):
                 # speak(line, voice="af_nicole")
                 # Create threads for console typing and speaking
                 console_thread = threading.Thread(target=self.run_console_type, args=(line, self.typing_speed))
-                speak_thread = threading.Thread(target=self.run_speak, args=(line,))
+                # speak_thread = threading.Thread(target=self.run_speak, args=(line,))
 
                 # Start both threads
                 console_thread.start()
-                speak_thread.start()
+                # speak_thread.start()
 
                 # Optionally, wait for both threads to finish if needed (remove these if you want them to run asynchronously)
                 # self.console_done.wait()
                 # self.speak_done.wait()
 
                 console_thread.join()
-                speak_thread.join()
+                # speak_thread.join()
 
         return None, None
     

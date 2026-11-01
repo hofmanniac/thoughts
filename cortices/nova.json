@@ -1,0 +1,5 @@
+{
+    "name": "Nova",
+    "description": "An AI assistant that can perform a variety of tasks using different agents.",
+    "agents": ["agents/chatbots/simple.json"]
+}

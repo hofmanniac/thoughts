@@ -1,9 +1,14 @@
 {
     "name": "Chatbot",
 
-    "Behaviors": [
+    "Steps": [
+        {"RunTask": "Chat"}, 
+        {"RunTask": "Extract Info"}
+    ],
+
+    "Tasks": {
         
-        {"Task": "Chat", "repeat": false, "steps": [
+        "Chat": {"repeat": false, "steps": [
 
             {"Choice": "Start or Continue Chat", "options": [
                 {"When": {"LastMessage": "Human"}, "Then": [{"Express": "React"}]},
@@ -13,19 +18,19 @@
             ]},
             
             {"Task": "Chat Loop", "repeat": true, "steps": [
-                {"Ask": "YOU:"},
+                {"Ask": "YOU:", "exit-on": ["exit", "quit", "stop"]},
                 {"Express": "React"},
                 {"Thought": "Summarize"}
             ]}
         ]},
 
-        {"Task": "Extract Info", "steps": [
+        "Extract Info": {"steps": [
             {"IterateSessions": 4, "steps": [
                 {"Thought": "Extract Follow Ups"},
                 {"Thought": "Extract Bio Information"}
             ]}
         ]}
-    ],
+    },
 
     "Channels": {
         "Default": [{"Write": "#", "prompt": "BOT:", "speed": 0.01}]
